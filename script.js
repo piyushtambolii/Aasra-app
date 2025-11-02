@@ -4,6 +4,118 @@ const supabaseUrl = "https://gzivkrzoitikwtrzmiah.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6aXZrcnpvaXRpa3d0cnptaWFoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjAwNjA1NSwiZXhwIjoyMDc3NTgyMDU1fQ.x_Lg6UyKT6S38p5zkqIxf_vhM0bDTo0QyCNvcZSqDug";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+let currentUser = null;
+const app = document.getElementById("app");
+let currentPage = "home";
+
+document.getElementById("googleLoginBtn")?.addEventListener("click", loginWithGoogle);
+
+/* ======= Insert this after: const app = document.getElementById("app"); ======= */
+
+/* --- Basic auth & main page render helpers --- */
+function getAuthPage() {
+  return `
+    <div class="p-6 flex flex-col justify-center min-h-screen">
+      <h1 class="text-4xl font-bold text-blue-600 mb-4">Aasra</h1>
+      <p class="text-gray-600 mb-6">Senior care companion — login to continue</p>
+
+      <button id="googleLoginBtn" class="bg-red-500 text-white px-4 py-3 rounded-lg w-full mb-3">
+        Continue with Google
+      </button>
+
+      <div class="flex items-center my-3"><hr class="flex-1"/><span class="px-2 text-sm text-gray-400">or</span><hr class="flex-1"/></div>
+
+      <button id="guestBtn" class="bg-gray-100 text-gray-800 px-4 py-3 rounded-lg w-full">
+        Continue as Guest
+      </button>
+    </div>
+  `;
+}
+
+function getMainPage() {
+  return `
+    <div class="min-h-screen flex flex-col">
+      <header class="bg-gray-900 text-white p-4 flex justify-between items-center">
+        <h2 class="font-bold text-xl">Aasra</h2>
+        <button id="logoutBtn" class="text-sm bg-red-500 px-3 py-1 rounded">Logout</button>
+      </header>
+
+      <main id="pageContainer" class="flex-1 p-4">
+        ${renderPageContent()}
+      </main>
+
+      <nav class="bg-white border-t flex justify-around p-2">
+        <button data-page="home" class="navBtn text-sm">Home</button>
+        <button data-page="meds" class="navBtn text-sm">Meds</button>
+        <button data-page="contacts" class="navBtn text-sm">Contacts</button>
+        <button data-page="sos" class="navBtn text-sm text-red-600 font-bold">SOS</button>
+      </nav>
+    </div>
+  `;
+}
+
+function renderPageContent() {
+  if (currentView === 'caregiver') {
+    // simple placeholder for caregiver view; you will expand later
+    if (currentPage === 'dashboard') return `<h2 class="text-2xl font-bold">Caregiver Dashboard</h2>`;
+    return `<h2 class="text-2xl font-bold">${currentPage}</h2>`;
+  }
+  // elder view content
+  switch (currentPage) {
+    case "home":
+      return `<h2 class="text-2xl font-bold mb-3">Home</h2><p>Welcome to Aasra — elder mode.</p>`;
+    case "meds":
+      return `<h2 class="text-2xl font-bold mb-3">Medications</h2><p>Your meds list will appear here.</p>`;
+    case "contacts":
+      return `<h2 class="text-2xl font-bold mb-3">Contacts</h2><p>Emergency contacts here.</p>`;
+    case "sos":
+      return `<h2 class="text-3xl text-red-600 font-bold mb-3">SOS</h2><button id="triggerSOS" class="bg-red-600 text-white px-4 py-3 rounded">Send SOS</button>`;
+    default:
+      return `<p>Unknown page</p>`;
+  }
+}
+
+/* --- Event wiring for buttons rendered inside the app --- */
+function attachNavEvents() {
+  // bottom nav
+  document.querySelectorAll(".navBtn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      currentPage = btn.dataset.page;
+      renderUI();
+    });
+  });
+
+  // logout
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) logoutBtn.addEventListener("click", async () => {
+    await supabase.auth.signOut();
+    currentUser = null;
+    renderUI();
+  });
+
+  // SOS
+  const sosBtn = document.getElementById("triggerSOS");
+  if (sosBtn) sosBtn.addEventListener("click", handleSOS);
+
+  // Auth page buttons (google + guest) — these elements only exist on auth page
+  const googleBtn = document.getElementById("googleLoginBtn");
+  if (googleBtn) googleBtn.addEventListener("click", loginWithGoogle);
+
+  const guestBtn = document.getElementById("guestBtn");
+  if (guestBtn) guestBtn.addEventListener("click", () => {
+    currentUser = { guest: true };
+    currentUser.role = 'elder';
+    renderUI();
+  });
+}
+
+/* --- placeholder SOS handler --- */
+function handleSOS() {
+  // small placeholder — we'll replace with real backend call
+  alert("SOS triggered — backend not wired in this dev build");
+}
+
+/* ======= end insertion block ======= */
 
 
 document.addEventListener("DOMContentLoaded", initApp);
@@ -33,7 +145,8 @@ async function initApp() {
   renderUI();
 }
 
-initApp(); // start
+// initApp(); 
+// start
 
 
 function renderUI() {
@@ -73,16 +186,38 @@ async function logout() {
 
 // const { data: { user } } = await supabase.auth.getUser();
 
+// self.addEventListener("fetch", (event) => {
+//   event.respondWith(
+//     caches.match(event.request).then((cachedResponse) => {
+//       if (cachedResponse) return cachedResponse;
+
+//       return fetch(event.request)
+//         .then((networkResponse) => {
+//           if (!networkResponse || networkResponse.status !== 200) {
+//             return networkResponse;
+//           }
+
+//           const responseClone = networkResponse.clone();
+//           caches.open(cacheName).then((cache) => {
+//             cache.put(event.request, responseClone);
+//           });
+
+//           return networkResponse;
+//         })
+//         .catch(() => caches.match("/offline.html"));
+//     })
+//   );
+// });
+
 
 
 
 // Add a med to DB (or to mock list if offline)
 async function addMed(med) {
   // If you use Supabase: insert into med_schedule table
-  const { data: userData } = await supabase.auth.getUser();
+   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
   if (!user) {
-    // fallback to local mock for demo
     med.id = Date.now();
     mockMedications.push(med);
     mockMedications.sort((a, b) => a.time.localeCompare(b.time));
@@ -101,7 +236,6 @@ async function addMed(med) {
     showToast("Failed to add med");
   } else {
     showToast("Medication added");
-    // refresh UI - you may call getMeds() or update local state
   }
 }
 
@@ -125,15 +259,15 @@ async function getMeds() {
 
 function getCombinedSchedule() {
   const now = new Date();
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
   const upcomingMeds = mockMedications
     .filter(m => !m.taken)
     .map(m => ({
       ...m,
       type: 'med',
-      title: `${m.name} (${m.dosage})`,
-      instruction: m.instruction,
+      title: `${m.name} (${m.dosage || ''})`,
+      instruction: m.instruction || '',
       icon: 'pill'
     }));
 
@@ -141,16 +275,18 @@ function getCombinedSchedule() {
     ...s,
     type: s.type || 'event',
     title: s.title,
-    instruction: s.title,
+    instruction: s.title || '',
     icon: s.icon || 'calendar'
   }));
 
   const merged = [...upcomingMeds, ...upcomingSchedule];
 
   return merged
+    .filter(item => item && item.time) // guard
     .filter(item => item.time >= currentTime)
     .sort((a, b) => a.time.localeCompare(b.time));
 }
+
 
 
 
@@ -251,7 +387,7 @@ function getCaregiverUI() {
 
         // --- STATE ---
         let currentView = 'elder'; // 'elder' or 'caregiver'
-        let currentPage = 'home'; // 'home', 'meds', 'dashboard', etc.
+        // let currentPage = 'home'; // 'home', 'meds', 'dashboard', etc.
         let currentLanguage = 'en'; // 'en', 'hi', 'mr'
         let showSOS = false;
         let sosCountdownTimer = null;
@@ -867,20 +1003,20 @@ function getCaregiverUI() {
             lucide.createIcons();
         }
         
-        function renderCaregiverManageCommunity() {
-            const container = document.getElementById('page-caregiver-manage_community');
-            container.innerHTML = `
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageCommunity')}</h2>
-                    <form id="form-add-community" class="mb-8 p-6 border rounded-lg bg-gray-50">
-                        ... (Form for Event Name, Time, Location) ...
-                        <button type="submit" class="mt-4 w-full bg-blue-500 ...">${t('addEvent')}</button>
-                    </form>
-                    <h3 class="text-xl font-semibold mb-4">Current Events</h3>
-                    <div id="manage-community-list" class="space-y-4"></div>
-                </div>`;
-            renderManageCommunityList();
-        }
+        // function renderCaregiverManageCommunity() {
+        //     const container = document.getElementById('page-caregiver-manage_community');
+        //     container.innerHTML = `
+        //         <div class="bg-white p-6 rounded-xl shadow-lg">
+        //             <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageCommunity')}</h2>
+        //             <form id="form-add-community" class="mb-8 p-6 border rounded-lg bg-gray-50">
+        //                 ... (Form for Event Name, Time, Location) ...
+        //                 <button type="submit" class="mt-4 w-full bg-blue-500 ...">${t('addEvent')}</button>
+        //             </form>
+        //             <h3 class="text-xl font-semibold mb-4">Current Events</h3>
+        //             <div id="manage-community-list" class="space-y-4"></div>
+        //         </div>`;
+        //     renderManageCommunityList();
+        // }
         
         function renderManageCommunityList() {
             const listContainer = document.getElementById('manage-community-list');
@@ -1000,47 +1136,47 @@ function getCaregiverUI() {
             renderManageScheduleList();
         }
         
-        function renderCaregiverManageNearby() {
-            const container = document.getElementById('page-caregiver-manage_nearby');
-            container.innerHTML = `
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageNearby')}</h2>
-                    <form id="form-add-nearby" class="mb-8 p-6 border rounded-lg bg-gray-50">
-                        <h3 class="text-xl font-semibold mb-4">${t('addPlace')}</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="text" id="new-nearby-name" placeholder="${t('placeName')}" class="p-3 border rounded-lg" required>
-                            <input type="text" id="new-nearby-distance" placeholder="${t('distance')}" class="p-3 border rounded-lg">
-                            <input type="text" id="new-nearby-icon" placeholder="Icon (e.g., pill)" class="p-3 border rounded-lg" value="map-pin">
-                        </div>
-                        <button type="submit" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addPlace')}</button>
-                    </form>
-                    <h3 class="text-xl font-semibold mb-4">Current Places</h3>
-                    <div id="manage-nearby-list" class="space-y-4"></div>
-                </div>`;
-            renderManageNearbyList();
-        }
+        // function renderCaregiverManageNearby() {
+        //     const container = document.getElementById('page-caregiver-manage_nearby');
+        //     container.innerHTML = `
+        //         <div class="bg-white p-6 rounded-xl shadow-lg">
+        //             <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageNearby')}</h2>
+        //             <form id="form-add-nearby" class="mb-8 p-6 border rounded-lg bg-gray-50">
+        //                 <h3 class="text-xl font-semibold mb-4">${t('addPlace')}</h3>
+        //                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        //                     <input type="text" id="new-nearby-name" placeholder="${t('placeName')}" class="p-3 border rounded-lg" required>
+        //                     <input type="text" id="new-nearby-distance" placeholder="${t('distance')}" class="p-3 border rounded-lg">
+        //                     <input type="text" id="new-nearby-icon" placeholder="Icon (e.g., pill)" class="p-3 border rounded-lg" value="map-pin">
+        //                 </div>
+        //                 <button type="submit" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addPlace')}</button>
+        //             </form>
+        //             <h3 class="text-xl font-semibold mb-4">Current Places</h3>
+        //             <div id="manage-nearby-list" class="space-y-4"></div>
+        //         </div>`;
+        //     renderManageNearbyList();
+        // }
 
-        function renderManageNearbyList() {
-            const listContainer = document.getElementById('manage-nearby-list');
-            if (!listContainer) return;
-            listContainer.innerHTML = '';
-            mockNearbyServices.forEach(item => {
-                listContainer.innerHTML += `
-                    <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
-                        <div class="flex items-center">
-                            <i data-lucide="${item.icon || 'map-pin'}" class="h-8 w-8 text-purple-500 mr-4"></i>
-                            <div>
-                                <p class="font-bold text-lg">${item.name}</p>
-                                <p class="text-sm text-gray-500">${item.distance}</p>
-                            </div>
-                        </div>
-                        <button data-id="${item.id}" class="btn-delete-nearby text-red-500 hover:text-red-700 transition-all duration-300">
-                            <i data-lucide="trash-2" class="h-5 w-5"></i>
-                        </button>
-                    </div>`;
-            });
-            lucide.createIcons();
-        }
+        // function renderManageNearbyList() {
+        //     const listContainer = document.getElementById('manage-nearby-list');
+        //     if (!listContainer) return;
+        //     listContainer.innerHTML = '';
+        //     mockNearbyServices.forEach(item => {
+        //         listContainer.innerHTML += `
+        //             <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
+        //                 <div class="flex items-center">
+        //                     <i data-lucide="${item.icon || 'map-pin'}" class="h-8 w-8 text-purple-500 mr-4"></i>
+        //                     <div>
+        //                         <p class="font-bold text-lg">${item.name}</p>
+        //                         <p class="text-sm text-gray-500">${item.distance}</p>
+        //                     </div>
+        //                 </div>
+        //                 <button data-id="${item.id}" class="btn-delete-nearby text-red-500 hover:text-red-700 transition-all duration-300">
+        //                     <i data-lucide="trash-2" class="h-5 w-5"></i>
+        //                 </button>
+        //             </div>`;
+        //     });
+        //     lucide.createIcons();
+        // }
         
         function renderCaregiverManageCommunity() {
             const container = document.getElementById('page-caregiver-manage_community');
@@ -1063,34 +1199,40 @@ function getCaregiverUI() {
             renderManageCommunityList();
         }
         
-        function renderManageCommunityList() {
-            const listContainer = document.getElementById('manage-community-list');
-            if (!listContainer) return;
-            listContainer.innerHTML = '';
-            mockCommunityEvents.forEach(item => {
-                listContainer.innerHTML += `
-                    <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
-                        <div class="flex items-center">
-                            <i data-lucide="${item.icon || 'users'}" class="h-8 w-8 text-orange-500 mr-4"></i>
-                            <div>
-                                <p class="font-bold text-lg">${item.name}</p>
-                                <p class="text-sm text-gray-500">${item.time} | ${item.location}</p>
-                            </div>
-                        </div>
-                        <button data-id="${item.id}" class="btn-delete-community text-red-500 hover:text-red-700 transition-all duration-300">
-                            <i data-lucide="trash-2" class="h-5 w-5"></i>
-                        </button>
-                    </div>`;
-            });
-            lucide.createIcons();
-        }
+        // function renderManageCommunityList() {
+        //     const listContainer = document.getElementById('manage-community-list');
+        //     if (!listContainer) return;
+        //     listContainer.innerHTML = '';
+        //     mockCommunityEvents.forEach(item => {
+        //         listContainer.innerHTML += `
+        //             <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
+        //                 <div class="flex items-center">
+        //                     <i data-lucide="${item.icon || 'users'}" class="h-8 w-8 text-orange-500 mr-4"></i>
+        //                     <div>
+        //                         <p class="font-bold text-lg">${item.name}</p>
+        //                         <p class="text-sm text-gray-500">${item.time} | ${item.location}</p>
+        //                     </div>
+        //                 </div>
+        //                 <button data-id="${item.id}" class="btn-delete-community text-red-500 hover:text-red-700 transition-all duration-300">
+        //                     <i data-lucide="trash-2" class="h-5 w-5"></i>
+        //                 </button>
+        //             </div>`;
+        //     });
+        //     lucide.createIcons();
+        // }
+
+
+
 
 
         // --- STATE HANDLERS ---
-        function handleDeleteSchedule(id) {
-            mockSchedule = mockSchedule.filter(s => s.id !== id);
-            renderManageScheduleList();
-        }
+        
+        
+        
+        // function handleDeleteSchedule(id) {
+        //     mockSchedule = mockSchedule.filter(s => s.id !== id);
+        //     renderManageScheduleList();
+        // }
         
         // NEW HANDLERS
         function handleAddNearby(e) {
