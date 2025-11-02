@@ -1,11 +1,12 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-        const supabase = supabase.createClient(
-        "https://gzivkrzoitikwtrzmiah.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6aXZrcnpvaXRpa3d0cnptaWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMDYwNTUsImV4cCI6MjA3NzU4MjA1NX0.iBxJySLJuvgh6wvQlfe22JachiGbpD2JigSIlNsKB2Q"
-        );
+const supabaseUrl = "https://gzivkrzoitikwtrzmiah.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6aXZrcnpvaXRpa3d0cnptaWFoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjAwNjA1NSwiZXhwIjoyMDc3NTgyMDU1fQ.x_Lg6UyKT6S38p5zkqIxf_vhM0bDTo0QyCNvcZSqDug";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 
 
+document.addEventListener("DOMContentLoaded", initApp);
         // --- Application init (wrap top-level awaits inside an async init) ---
 async function initApp() {
   try {
