@@ -6,32 +6,120 @@
 
 
 
-        async function login(email) {
+        // --- Application init (wrap top-level awaits inside an async init) ---
+async function initApp() {
+  try {
+    // Get current user (safe)
+    const { data: userData } = await supabase.auth.getUser();
+    const currentUser = userData?.user || null;
+    // If you need to act on currentUser do it here; otherwise leave it available
+    window.currentUser = currentUser;
+
+    // render UI after supabase client and auth state known
+    renderApp();
+    attachEventListeners();
+  } catch (err) {
+    console.error("Init error:", err);
+  }
+}
+initApp(); // start
+
+
+
+
+// Example auth helpers
+async function login(email) {
   const { data, error } = await supabase.auth.signInWithOtp({ email });
-  if (error) alert(error.message);
-  else alert("Magic link sent. Check email 👍");
+  if (error) return alert(error.message);
+  alert("Magic link sent. Check email 👍");
+}
+
+async function logout() {
+  await supabase.auth.signOut();
+  window.currentUser = null;
+  renderApp();
 }
 
 
-const { data: { user } } = await supabase.auth.getUser();
+// const { data: { user } } = await supabase.auth.getUser();
 
-await supabase.auth.signOut();
 
+
+
+// Add a med to DB (or to mock list if offline)
 async function addMed(med) {
-  const { user } = (await supabase.auth.getUser()).data;
-  await supabase.from("med_schedule").insert({ 
+  // If you use Supabase: insert into med_schedule table
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) {
+    // fallback to local mock for demo
+    med.id = Date.now();
+    mockMedications.push(med);
+    mockMedications.sort((a, b) => a.time.localeCompare(b.time));
+    renderManageMedsList();
+    return;
+  }
+
+  const payload = {
     user_id: user.id,
-    ...med 
-  });
+    ...med
+  };
+
+  const { error } = await supabase.from("med_schedule").insert(payload);
+  if (error) {
+    console.error("Failed to add med:", error);
+    showToast("Failed to add med");
+  } else {
+    showToast("Medication added");
+    // refresh UI - you may call getMeds() or update local state
+  }
 }
+
+
 
 async function getMeds() {
-  const { user } = (await supabase.auth.getUser()).data;
-  let { data } = await supabase
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) return [];
+  const { data, error } = await supabase
     .from("med_schedule")
     .select("*")
     .eq("user_id", user.id);
-  return data;
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return data || [];
+}
+
+
+function getCombinedSchedule() {
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  const upcomingMeds = mockMedications
+    .filter(m => !m.taken)
+    .map(m => ({
+      ...m,
+      type: 'med',
+      title: `${m.name} (${m.dosage})`,
+      instruction: m.instruction,
+      icon: 'pill'
+    }));
+
+  const upcomingSchedule = mockSchedule.map(s => ({
+    ...s,
+    type: s.type || 'event',
+    title: s.title,
+    instruction: s.title,
+    icon: s.icon || 'calendar'
+  }));
+
+  const merged = [...upcomingMeds, ...upcomingSchedule];
+
+  return merged
+    .filter(item => item.time >= currentTime)
+    .sort((a, b) => a.time.localeCompare(b.time));
 }
 
 
@@ -73,7 +161,12 @@ async function enableNotifications() {
 }
 
 
-        
+       
+
+
+
+
+
         // --- STATE ---
         let currentView = 'elder'; // 'elder' or 'caregiver'
         let currentPage = 'home'; // 'home', 'meds', 'dashboard', etc.
