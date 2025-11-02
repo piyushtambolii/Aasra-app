@@ -482,23 +482,26 @@ function getCaregiverUI() {
             lucide.createIcons(); // Re-create icons
         }
         
-        function getCombinedSchedule() {
-            const now = new Date();
-            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        // function getCombinedSchedule() {
+        //     const now = new Date();
+        //     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             
-            const upcomingMeds = mockMedications
-                .filter(m => !m.taken)
-                .map(m => ({ ...m, type: 'med', title: `${m.name} (${m.dosage})`, instruction: m.instruction, icon: 'pill' }));
+        //     const upcomingMeds = mockMedications
+        //         .filter(m => !m.taken)
+        //         .map(m => ({ ...m, type: 'med', title: `${m.name} (${m.dosage})`, instruction: m.instruction, icon: 'pill' }));
                 
-            const upcomingSchedule = mockSchedule
-                .map(s => ({ ...s, time: s.time })); // Already in correct format
+        //     const upcomingSchedule = mockSchedule
+        //         .map(s => ({ ...s, time: s.time })); // Already in correct format
                 
-            return [...upcomingMeds, ...upcomingSchedule]
-                .filter(item => item.time >= currentTime)
-                .sort((a, b) => a.time.localeCompare(b.time));
-        }
+        //     return [...upcomingMeds, ...upcomingSchedule]
+        //         .filter(item => item.time >= currentTime)
+        //         .sort((a, b) => a.time.localeCompare(b.time));
+        // }
         
+
+
         // Render Next Reminder on Home Page
+        
         function updateNextReminder() {
             const combinedSchedule = getCombinedSchedule();
             const textElMobile = document.getElementById('next-reminder-text');
