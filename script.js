@@ -9,23 +9,52 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 document.addEventListener("DOMContentLoaded", initApp);
         // --- Application init (wrap top-level awaits inside an async init) ---
 async function initApp() {
-  try {
-    // Get current user (safe)
-    const { data: userData } = await supabase.auth.getUser();
-    const currentUser = userData?.user || null;
-    // If you need to act on currentUser do it here; otherwise leave it available
-    window.currentUser = currentUser;
+  const { data } = await supabase.auth.getSession();
+  currentUser = data.session?.user || null;
 
-    // render UI after supabase client and auth state known
-    renderApp();
-    attachEventListeners();
-  } catch (err) {
-    console.error("Init error:", err);
+  if (!currentUser) {
+    renderUI();
+    return;
   }
+
+  // fetch role
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", currentUser.id)
+    .single();
+
+  if (!profile || !profile.role) {
+    renderRolePicker();
+    return;
+  }
+
+  currentUser.role = profile.role;
+  renderUI();
 }
+
 initApp(); // start
 
 
+function renderUI() {
+  if (!currentUser) {
+    app.innerHTML = getAuthPage();
+    return;
+  }
+
+  if (!currentUser.role) {
+    renderRolePicker();
+    return;
+  }
+
+  if (currentUser.role === "elder") {
+    app.innerHTML = getElderUI();
+  } else {
+    app.innerHTML = getCaregiverUI();
+  }
+
+  attachNavEvents();
+}
 
 
 // Example auth helpers
@@ -162,9 +191,61 @@ async function enableNotifications() {
 }
 
 
-       
+async function saveRole(role) {
+  await supabase.from("profiles").upsert({
+    id: currentUser.id,
+    role
+  });
+
+  currentUser.role = role;
+  renderUI();
+}
 
 
+    function renderRolePicker() {
+  app.innerHTML = `
+  <div class="p-6 flex flex-col justify-center min-h-screen">
+    <h2 class="text-2xl font-bold mb-6">Who are you?</h2>
+
+    <button id="chooseElder"
+      class="bg-blue-600 text-white p-4 rounded-lg mb-4">Elder 👴</button>
+
+    <button id="chooseCare"
+      class="bg-green-600 text-white p-4 rounded-lg">Caregiver 👨‍⚕️</button>
+  </div>
+  `;
+
+  document.getElementById("chooseElder").onclick = () => saveRole("elder");
+  document.getElementById("chooseCare").onclick = () => saveRole("caregiver");
+}
+   
+
+
+function getElderUI() {
+  return `
+  <div class="p-4">
+    <h2 class="text-2xl font-bold mb-3">Elder Dashboard 👴</h2>
+    <p>Healthy & Safe mode.</p>
+
+    <button data-page="sos" class="bg-red-600 text-white px-4 py-2 rounded mt-4">
+      SOS Emergency
+    </button>
+  </div>
+  `;
+}
+
+function getCaregiverUI() {
+  return `
+  <div class="p-4">
+    <h2 class="text-2xl font-bold mb-3">Caregiver Dashboard 👨‍⚕️</h2>
+    <p>Monitor & support your elders here.</p>
+
+    <button data-page="viewElders" class="bg-blue-600 text-white px-4 py-2 rounded mt-4">
+      View Elders List
+    </button>
+  </div>
+  `;
+}
 
 
 
