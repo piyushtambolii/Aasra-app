@@ -5,6 +5,7 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
+  
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -16,5 +17,24 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "description": "A fast, mobile-first web app designed to provide a seamless app-like experience with smooth UI and responsive design.",
+  "screenshots": [
+  {
+    "src": "/screenshots/screen1.jpg",
+    "sizes": "1080x1920",
+    "type": "image/png"
+  },
+  {
+    "src": "/screenshots/screen2.jpg",
+    "sizes": "1080x1920",
+    "type": "image/png"
+  }
+],
+"orientation": "portrait",
+"id": "com.piyush.myapp"
+
+
+
+
 }
