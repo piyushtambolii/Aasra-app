@@ -8,76 +8,68 @@ let currentUser = null;
 const app = document.getElementById("app");
 let currentPage = "home";
 
-document.getElementById("googleLoginBtn")?.addEventListener("click", loginWithGoogle);
+// --- FIX: REMOVED this top-level line. It was redundant and problematic. ---
+// document.getElementById("googleLoginBtn")?.addEventListener("click", loginWithGoogle);
 
 /* ======= Insert this after: const app = document.getElementById("app"); ======= */
 
 /* --- Basic auth & main page render helpers --- */
 function getAuthPage() {
+  // Use an inline SVG for the Google logo
+  const googleLogoSvg = `
+    <svg class="w-6 h-6 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
+      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
+      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.641-3.108-11.28-7.581l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
+      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C39.971,36.35,44,30.601,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
+    </svg>
+  `;
+
   return `
-    <div class="p-6 flex flex-col justify-center min-h-screen">
-      <h1 class="text-4xl font-bold text-blue-600 mb-4">Aasra</h1>
-      <p class="text-gray-600 mb-6">Senior care companion — login to continue</p>
+    <div class="flex flex-col justify-center items-center min-h-screen bg-gray-50 p-6">
+      <div class="w-full max-w-sm">
+        <!-- Logo -->
+        <div class="flex items-center justify-center text-5xl font-bold text-blue-600 mb-4">
+          <i data-lucide="hand-heart" class="h-12 w-12 mr-3 text-blue-500"></i>
+          <span>Aasra</span>
+        </div>
+        <p class="text-lg text-gray-600 text-center mb-10">Your senior care companion.</p>
 
-      <button id="googleLoginBtn" class="bg-red-500 text-white px-4 py-3 rounded-lg w-full mb-3">
-        Continue with Google
-      </button>
+        <!-- Google Login Button -->
+        <button id="googleLoginBtn" class="w-full bg-white text-gray-700 font-medium px-4 py-3 rounded-xl shadow-md border border-gray-200 flex items-center justify-center transition-all duration-300 hover:shadow-lg active:scale-95">
+          ${googleLogoSvg}
+          <span>Continue with Google</span>
+        </button>
 
-      <div class="flex items-center my-3"><hr class="flex-1"/><span class="px-2 text-sm text-gray-400">or</span><hr class="flex-1"/></div>
+        <!-- Separator -->
+        <div class="flex items-center my-6">
+          <hr class="flex-1 border-t border-gray-300"/>
+          <span class="px-3 text-sm text-gray-400">or</span>
+          <hr class="flex-1 border-t border-gray-300"/>
+        </div>
 
-      <button id="guestBtn" class="bg-gray-100 text-gray-800 px-4 py-3 rounded-lg w-full">
-        Continue as Guest
-      </button>
+        <!-- Guest Login Button -->
+        <button id="guestBtn" class="w-full bg-gray-600 text-white font-medium px-4 py-3 rounded-xl shadow-md flex items-center justify-center transition-all duration-300 hover:bg-gray-700 active:scale-95">
+          <i data-lucide="user-circle" class="w-6 h-6 mr-3"></i>
+          <span>Continue as Guest</span>
+        </button>
+      </div>
     </div>
   `;
 }
 
-function getMainPage() {
-  return `
-    <div class="min-h-screen flex flex-col">
-      <header class="bg-gray-900 text-white p-4 flex justify-between items-center">
-        <h2 class="font-bold text-xl">Aasra</h2>
-        <button id="logoutBtn" class="text-sm bg-red-500 px-3 py-1 rounded">Logout</button>
-      </header>
-
-      <main id="pageContainer" class="flex-1 p-4">
-        ${renderPageContent()}
-      </main>
-
-      <nav class="bg-white border-t flex justify-around p-2">
-        <button data-page="home" class="navBtn text-sm">Home</button>
-        <button data-page="meds" class="navBtn text-sm">Meds</button>
-        <button data-page="contacts" class="navBtn text-sm">Contacts</button>
-        <button data-page="sos" class="navBtn text-sm text-red-600 font-bold">SOS</button>
-      </nav>
-    </div>
-  `;
-}
-
-function renderPageContent() {
-  if (currentView === 'caregiver') {
-    // simple placeholder for caregiver view; you will expand later
-    if (currentPage === 'dashboard') return `<h2 class="text-2xl font-bold">Caregiver Dashboard</h2>`;
-    return `<h2 class="text-2xl font-bold">${currentPage}</h2>`;
-  }
-  // elder view content
-  switch (currentPage) {
-    case "home":
-      return `<h2 class="text-2xl font-bold mb-3">Home</h2><p>Welcome to Aasra — elder mode.</p>`;
-    case "meds":
-      return `<h2 class="text-2xl font-bold mb-3">Medications</h2><p>Your meds list will appear here.</p>`;
-    case "contacts":
-      return `<h2 class="text-2xl font-bold mb-3">Contacts</h2><p>Emergency contacts here.</p>`;
-    case "sos":
-      return `<h2 class="text-3xl text-red-600 font-bold mb-3">SOS</h2><button id="triggerSOS" class="bg-red-600 text-white px-4 py-3 rounded">Send SOS</button>`;
-    default:
-      return `<p>Unknown page</p>`;
-  }
-}
+// These functions are no longer needed, as we are using the static UI
+/*
+function getMainPage() { ... }
+function renderPageContent() { ... }
+*/
 
 /* --- Event wiring for buttons rendered inside the app --- */
 function attachNavEvents() {
-  // bottom nav
+  // These listeners are for the DYNAMICALLY INJECTED UI
+  // (the login page, and the old placeholder dashboard)
+  
+  // bottom nav (for old placeholder UI, no longer used)
   document.querySelectorAll(".navBtn").forEach(btn => {
     btn.addEventListener("click", (e) => {
       currentPage = btn.dataset.page;
@@ -85,7 +77,7 @@ function attachNavEvents() {
     });
   });
 
-  // logout
+  // logout (for old placeholder UI, no longer used)
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) logoutBtn.addEventListener("click", async () => {
     await supabase.auth.signOut();
@@ -93,7 +85,7 @@ function attachNavEvents() {
     renderUI();
   });
 
-  // SOS
+  // SOS (for old placeholder UI, no longer used)
   const sosBtn = document.getElementById("triggerSOS");
   if (sosBtn) sosBtn.addEventListener("click", handleSOS);
 
@@ -104,9 +96,17 @@ function attachNavEvents() {
   const guestBtn = document.getElementById("guestBtn");
   if (guestBtn) guestBtn.addEventListener("click", () => {
     currentUser = { guest: true };
-    currentUser.role = 'elder';
-    renderUI();
+    // Assign a default role for guest users
+    currentUser.role = 'elder'; 
+    renderUI(); // Re-render to show main app
   });
+
+  // --- ADDED: Listeners for role picker buttons ---
+  const elderBtn = document.getElementById("chooseElder");
+  if (elderBtn) elderBtn.addEventListener("click", () => saveRole("elder"));
+  
+  const careBtn = document.getElementById("chooseCare");
+  if (careBtn) careBtn.addEventListener("click", () => saveRole("caregiver"));
 }
 
 /* --- placeholder SOS handler --- */
@@ -121,28 +121,38 @@ function handleSOS() {
 document.addEventListener("DOMContentLoaded", initApp);
         // --- Application init (wrap top-level awaits inside an async init) ---
 async function initApp() {
-  const { data } = await supabase.auth.getSession();
-  currentUser = data.session?.user || null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    currentUser = data.session?.user || null;
 
-  if (!currentUser) {
+    if (!currentUser) {
+      // No user, just show the login page
+      renderUI();
+      return;
+    }
+
+    // User exists, check for their role in our 'profiles' table
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", currentUser.id)
+      .single();
+
+    if (!profile || !profile.role) {
+      // User is logged in but has no role, show role picker
+      renderUI(); // Call renderUI, which will show role picker
+      return;
+    }
+
+    // User is logged in and has a role, show the main app
+    currentUser.role = profile.role;
     renderUI();
-    return;
+  } catch (error) {
+    console.error("Error during app initialization:", error);
+    if (app) {
+        app.innerHTML = `<div class="p-4 text-center text-red-500">Error loading app. Please check console.</div>`;
+    }
   }
-
-  // fetch role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", currentUser.id)
-    .single();
-
-  if (!profile || !profile.role) {
-    renderRolePicker();
-    return;
-  }
-
-  currentUser.role = profile.role;
-  renderUI();
 }
 
 // initApp(); 
@@ -150,23 +160,64 @@ async function initApp() {
 
 
 function renderUI() {
+  const mainAppContainer = document.getElementById('main-app-container');
+  // --- FIX: Guard against app/mainAppContainer not existing ---
+  if (!app || !mainAppContainer) {
+    console.error("Fatal Error: #app or #main-app-container not found in DOM.");
+    return;
+  }
+
   if (!currentUser) {
+    // LOGGED OUT STATE
+    // Show login page, hide main app
     app.innerHTML = getAuthPage();
+    app.classList.remove('hidden');
+    mainAppContainer.classList.add('hidden');
+    
+    attachNavEvents(); // Attach listeners for login buttons
+    
+    // --- FIX: Safety check for lucide ---
+    if (window.lucide) {
+      lucide.createIcons(); // Render login page icons
+    } else {
+      console.warn("Lucide icons not loaded, skipping icon render for login.");
+    }
     return;
   }
 
   if (!currentUser.role) {
-    renderRolePicker();
+    // LOGGED IN, BUT NO ROLE STATE
+    // Show role picker, hide main app
+    app.innerHTML = renderRolePicker();
+    app.classList.remove('hidden');
+    mainAppContainer.classList.add('hidden');
+
+    attachNavEvents(); // Attach listeners for role picker
+    
+    // --- FIX: Safety check for lucide ---
+    if (window.lucide) {
+      lucide.createIcons(); // Render role picker icons
+    } else {
+      console.warn("Lucide icons not loaded, skipping icon render for role picker.");
+    }
     return;
   }
 
-  if (currentUser.role === "elder") {
-    app.innerHTML = getElderUI();
+  // LOGGED IN AND HAS ROLE STATE
+  // Hide login/role picker, show main app
+  app.innerHTML = '';
+  app.classList.add('hidden');
+  mainAppContainer.classList.remove('hidden');
+  
+  // Initialize all the listeners for the STATIC UI
+  initStaticUI(); 
+  
+  // --- FIX: Safety check for lucide ---
+  if (window.lucide) {
+    lucide.createIcons(); // Render all icons for the main app
   } else {
-    app.innerHTML = getCaregiverUI();
+    console.warn("Lucide icons not loaded, skipping icon render for main app.");
   }
-
-  attachNavEvents();
 }
 
 
@@ -177,10 +228,11 @@ async function login(email) {
   alert("Magic link sent. Check email 👍");
 }
 
+// This function is no longer used by static UI, but we'll keep it
 async function logout() {
   await supabase.auth.signOut();
-  window.currentUser = null;
-  renderApp();
+  currentUser = null;
+  renderApp(); // This is the STATIC UI renderApp
 }
 
 
@@ -328,6 +380,14 @@ async function enableNotifications() {
 
 
 async function saveRole(role) {
+  // For guest users, just set the role locally and re-render
+  if (currentUser?.guest) {
+      currentUser.role = role;
+      renderUI();
+      return;
+  }
+
+  // For real users, save to Supabase
   await supabase.from("profiles").upsert({
     id: currentUser.id,
     role
@@ -338,56 +398,47 @@ async function saveRole(role) {
 }
 
 
-    function renderRolePicker() {
-  app.innerHTML = `
-  <div class="p-6 flex flex-col justify-center min-h-screen">
-    <h2 class="text-2xl font-bold mb-6">Who are you?</h2>
+function renderRolePicker() {
+  // --- FIX: Removed onclick handlers, they are now in attachNavEvents ---
+  return `
+  <div class="p-6 flex flex-col justify-center items-center min-h-screen bg-gray-50">
+    <div class="w-full max-w-sm">
+        <div class="flex items-center justify-center text-5xl font-bold text-blue-600 mb-4">
+          <i data-lucide="hand-heart" class="h-12 w-12 mr-3 text-blue-500"></i>
+          <span>Aasra</span>
+        </div>
+        <h2 class="text-2xl font-bold mb-8 text-center text-gray-700">Who are you?</h2>
 
-    <button id="chooseElder"
-      class="bg-blue-600 text-white p-4 rounded-lg mb-4">Elder 👴</button>
+        <button id="chooseElder"
+          class="w-full bg-blue-600 text-white p-6 rounded-2xl mb-6 text-2xl font-bold flex items-center justify-center transition-all duration-300 hover:bg-blue-700 active:scale-95">
+          <i data-lucide="user" class="h-8 w-8 mr-4"></i>
+          Elder
+        </button>
 
-    <button id="chooseCare"
-      class="bg-green-600 text-white p-4 rounded-lg">Caregiver 👨‍⚕️</button>
+        <button id="chooseCare"
+          class="w-full bg-green-600 text-white p-6 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all duration-300 hover:bg-green-700 active:scale-95">
+          <i data-lucide="heart-pulse" class="h-8 w-8 mr-4"></i>
+          Caregiver
+        </button>
+    </div>
   </div>
   `;
-
-  document.getElementById("chooseElder").onclick = () => saveRole("elder");
-  document.getElementById("chooseCare").onclick = () => saveRole("caregiver");
 }
    
 
+// These placeholder UI functions are no longer needed
+// function getElderUI() { ... }
+// function getCaregiverUI() { ... }
 
-function getElderUI() {
-  return `
-  <div class="p-4">
-    <h2 class="text-2xl font-bold mb-3">Elder Dashboard 👴</h2>
-    <p>Healthy & Safe mode.</p>
 
-    <button data-page="sos" class="bg-red-600 text-white px-4 py-2 rounded mt-4">
-      SOS Emergency
-    </button>
-  </div>
-  `;
-}
-
-function getCaregiverUI() {
-  return `
-  <div class="p-4">
-    <h2 class="text-2xl font-bold mb-3">Caregiver Dashboard 👨‍⚕️</h2>
-    <p>Monitor & support your elders here.</p>
-
-    <button data-page="viewElders" class="bg-blue-600 text-white px-4 py-2 rounded mt-4">
-      View Elders List
-    </button>
-  </div>
-  `;
-}
-
+// ==================================================================
+// ===== PART 2: STATIC UI LOGIC (IMPROVED) =====
+// ==================================================================
 
 
         // --- STATE ---
         let currentView = 'elder'; // 'elder' or 'caregiver'
-        // let currentPage = 'home'; // 'home', 'meds', 'dashboard', etc.
+        // let currentPage = 'home'; // 'home', 'meds', 'dashboard', etc. (This is declared in Part 1)
         let currentLanguage = 'en'; // 'en', 'hi', 'mr'
         let showSOS = false;
         let sosCountdownTimer = null;
@@ -450,7 +501,11 @@ function getCaregiverUI() {
                 manageContacts: "Manage Contacts", contactName: "Contact Name", relation: "Relation (e.g., Family)", phone: "Phone Number", addContact: "Add Contact",
                 manageSchedule: "Manage Schedule", appointment: "Appointment", event: "Event", title: "Title (e.g., Dr. Patel Check-up)", type: "Type", addEntry: "Add Entry",
                 manageNearby: "Manage Nearby Places", placeName: "Place Name", distance: "Distance (e.g., 0.5 km)", addPlace: "Add Place",
-                manageCommunity: "Manage Community", eventName: "Event Name", location: "Location", addEvent: "Add Event"
+                manageCommunity: "Manage Community", eventName: "Event Name", location: "Location", addEvent: "Add Event",
+                // --- ADDED: Translations for settings ---
+                settings: "Settings",
+                enableNotifications: "Enable Notifications",
+                enableNotificationsSub: "Click to allow push notifications for important alerts."
             },
             hi: {
                 demoAasra: "डेमो (आसरा):", viewingAs: "आप के रूप में देख रहे हैं", elder: "बुज़ुर्ग", caregiver: "देखभाल करने वाला", switchTo: "में बदलें",
@@ -472,7 +527,11 @@ function getCaregiverUI() {
                 manageContacts: "संपर्क प्रबंधित करें", contactName: "संपर्क का नाम", relation: "रिश्ता (जैसे, परिवार)", phone: "फ़ोन नंबर", addContact: "संपर्क जोड़ें",
                 manageSchedule: "शेड्यूल प्रबंधित करें", appointment: "अपॉइंटमेंट", event: "इवेंट", title: "शीर्षक (जैसे, डॉ पटेल चेक-अप)", type: "प्रकार", addEntry: "एंट्री जोड़ें",
                 manageNearby: "आस-पास के स्थान प्रबंधित करें", placeName: "स्थान का नाम", distance: "दूरी (जैसे, 0.5 किमी)", addPlace: "स्थान जोड़ें",
-                manageCommunity: "समुदाय प्रबंधित करें", eventName: "इवेंट का नाम", location: "जगह", addEvent: "इवेंट जोड़ें"
+                manageCommunity: "समुदाय प्रबंधित करें", eventName: "इवेंट का नाम", location: "जगह", addEvent: "इवेंट जोड़ें",
+                // --- ADDED: Translations for settings ---
+                settings: "सेटिंग्स",
+                enableNotifications: "सूचनाएं सक्षम करें",
+                enableNotificationsSub: "महत्वपूर्ण अलर्ट के लिए पुश सूचनाओं की अनुमति देने के लिए क्लिक करें।"
             },
             mr: {
                 demoAasra: "डेमो (आसरा):", viewingAs: "तुम्ही म्हणून पाहत आहात", elder: "ज्येष्ठ", caregiver: "काळजीवाहू", switchTo: "मध्ये बदला",
@@ -492,9 +551,13 @@ function getCaregiverUI() {
                 delete: "हटवा", recentVitals: "अलीकडील Vitals",
                 todaysPlan: "आजची योजना", noUpcomingTasks: "आजसाठी आणखी कार्ये नाहीत!",
                 manageContacts: "संपर्क व्यवस्थापित करा", contactName: "संपर्काचे नाव", relation: "नाते (उदा. कुटुंब)", phone: "फोन नंबर", addContact: "संपर्क जोडा",
-                manageSchedule: "शेड्यूल व्यवस्थापित करा", appointment: "अपॉइंटमेंट", event: "इव्हेंट", title: "शीर्षक (उदा. डॉ पटेल चेक-अप)", type: "प्रकार", addEntry: "एंट्री जोडा",
+                manageSchedule: "शेड्यूल प्रबंधित करें", appointment: "अपॉइंटमेंट", event: "इव्हेंट", title: "शीर्षक (उदा. डॉ पटेल चेक-अप)", type: "प्रकार", addEntry: "एंट्री जोडा",
                 manageNearby: "जवळपासची ठिकाणे व्यवस्थापित करा", placeName: "ठिकाणाचे नाव", distance: "अंतर (उदा. 0.5 किमी)", addPlace: "ठिकाण जोडा",
-                manageCommunity: "समुदाय व्यवस्थापित करा", eventName: "इव्हेंटचे नाव", location: "ठिकाण", addEvent: "इव्हेंट जोडा"
+                manageCommunity: "समुदाय व्यवस्थापित करा", eventName: "इव्हेंटचे नाव", location: "ठिकाण", addEvent: "इव्हेंट जोडा",
+                // --- ADDED: Translations for settings ---
+                settings: "सेटिंग्ज",
+                enableNotifications: "सूचना सक्षम करा",
+                enableNotificationsSub: "महत्वाच्या सूचनांसाठी पुश नोटिफिकेशन्सना अनुमती देण्यासाठी क्लिक करा."
             }
         };
 
@@ -505,6 +568,7 @@ function getCaregiverUI() {
 
         function showToast(message) {
             const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return; // Guard clause
             const toastId = `toast-${Date.now()}`;
             const toast = document.createElement('div');
             toast.id = toastId;
@@ -521,7 +585,7 @@ function getCaregiverUI() {
             }, 3000);
         }
 
-        // --- RENDER FUNCTIONS ---
+        // --- RENDER FUNCTIONS (for Static UI) ---
         function renderApp() {
             // 1. Translate all elements
             document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -532,28 +596,40 @@ function getCaregiverUI() {
             });
 
             // 2. Update View Toggle
-            document.getElementById('view-toggle-role').innerText = t(currentView);
-            document.getElementById('view-toggle-target').innerText = t(currentView === 'elder' ? 'caregiver' : 'elder');
+            const viewToggleRole = document.getElementById('view-toggle-role');
+            if (viewToggleRole) viewToggleRole.innerText = t(currentView);
+            
+            const viewToggleTarget = document.getElementById('view-toggle-target');
+            if (viewToggleTarget) viewToggleTarget.innerText = t(currentView === 'elder' ? 'caregiver' : 'elder');
 
             // 3. Update Language Switcher UI
             ['en', 'hi', 'mr'].forEach(lang => {
                 const btn = document.getElementById(`lang-${lang}`);
-                btn.className = `py-1 px-3 rounded-full text-sm font-medium transition-all duration-300 ${currentLanguage === lang ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`;
+                if (btn) {
+                    btn.className = `py-1 px-3 rounded-full text-sm font-medium transition-all duration-300 ${currentLanguage === lang ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`;
+                }
             });
 
             // 4. Show/Hide Main Views
-            document.getElementById('elder-view-container').classList.toggle('hidden', currentView !== 'elder');
-            document.getElementById('caregiver-view-container').classList.toggle('hidden', currentView !== 'caregiver');
+            const elderView = document.getElementById('elder-view-container');
+            if (elderView) elderView.classList.toggle('hidden', currentView !== 'elder');
+            
+            const caregiverView = document.getElementById('caregiver-view-container');
+            if (caregiverView) caregiverView.classList.toggle('hidden', currentView !== 'caregiver');
 
             // 5. Show/Hide Elder UI based on SOS
-            document.getElementById('elder-bottom-nav-container').classList.toggle('hidden', currentView !== 'elder' || showSOS);
-            document.getElementById('sos-modal-container').classList.toggle('hidden', !showSOS);
+            const elderNav = document.getElementById('elder-bottom-nav-container');
+            if (elderNav) elderNav.classList.toggle('hidden', currentView !== 'elder' || showSOS);
+            
+            const sosModal = document.getElementById('sos-modal-container');
+            if (sosModal) sosModal.classList.toggle('hidden', !showSOS);
 
             if (showSOS) return; // Don't re-render pages if SOS is active
 
             // 6. Show/Hide correct page
             const elderPages = ['home', 'plan', 'meds', 'contacts', 'nearby', 'community', 'doctorOnCall'];
-            const caregiverPages = ['dashboard', 'manage_meds', 'manage_vitals', 'manage_contacts', 'manage_schedule', 'manage_nearby', 'manage_community'];
+            // --- ADDED: 'manage_settings' to caregiver pages ---
+            const caregiverPages = ['dashboard', 'manage_meds', 'manage_vitals', 'manage_contacts', 'manage_schedule', 'manage_nearby', 'manage_community', 'manage_settings'];
             
             function showPage(pageId) {
                 const el = document.getElementById(pageId);
@@ -606,6 +682,8 @@ function getCaregiverUI() {
                 { name: t('calls'), page: 'contacts', icon: 'phone-call' },
             ];
             const container = document.getElementById('elder-bottom-nav-container');
+            if (!container) return; // Guard clause
+            
             container.innerHTML = ''; // Clear old nav
             navItems.forEach(item => {
                 container.innerHTML += `
@@ -615,29 +693,14 @@ function getCaregiverUI() {
                     </button>
                 `;
             });
-            lucide.createIcons(); // Re-create icons
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons(); // Re-create icons
+            }
         }
         
-        // function getCombinedSchedule() {
-        //     const now = new Date();
-        //     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            
-        //     const upcomingMeds = mockMedications
-        //         .filter(m => !m.taken)
-        //         .map(m => ({ ...m, type: 'med', title: `${m.name} (${m.dosage})`, instruction: m.instruction, icon: 'pill' }));
-                
-        //     const upcomingSchedule = mockSchedule
-        //         .map(s => ({ ...s, time: s.time })); // Already in correct format
-                
-        //     return [...upcomingMeds, ...upcomingSchedule]
-        //         .filter(item => item.time >= currentTime)
-        //         .sort((a, b) => a.time.localeCompare(b.time));
-        // }
-        
-
-
         // Render Next Reminder on Home Page
-        
         function updateNextReminder() {
             const combinedSchedule = getCombinedSchedule();
             const textElMobile = document.getElementById('next-reminder-text');
@@ -651,45 +714,16 @@ function getCaregiverUI() {
                 reminderText = t('noUpcomingTasks');
             }
             
-            if(textElMobile) textElMobile.innerText = reminderText;
-            if(textElDesktop) textElDesktop.innerText = reminderText;
-        }
-        
-        // Render Elder Today's Plan Page (NEW)
-        function renderElderPlanPage() {
-            const container = document.getElementById('plan-list-container');
-            container.innerHTML = ''; // Clear old list
-            const combinedSchedule = getCombinedSchedule();
-            
-            if (combinedSchedule.length > 0) {
-                combinedSchedule.forEach(item => {
-                    const isMed = item.type === 'med';
-                    container.innerHTML += `
-                        <div class="bg-white p-6 rounded-2xl shadow-lg flex items-center transition-all duration-300 hover:shadow-xl ${isMed ? 'border-l-8 border-blue-500' : 'border-l-8 border-indigo-500'}">
-                            <i data-lucide="${item.icon}" class="h-12 w-12 ${isMed ? 'text-blue-500' : 'text-indigo-500'} mr-6"></i>
-                            <div>
-                                <p class="text-2xl font-semibold text-gray-800">${item.time}</p>
-                                <h2 class="text-3xl font-bold">${item.title}</h2>
-                                <p class="text-2xl text-gray-600">${item.instruction || (isMed ? 'Medication' : 'Event')}</p>
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                container.innerHTML += `
-                    <div class="bg-green-100 p-6 rounded-2xl shadow-lg border-4 border-green-500 flex flex-col items-center">
-                        <i data-lucide="check-circle" class="h-16 w-16 text-green-600 mb-4"></i>
-                        <h2 class="text-3xl font-bold text-green-800">${t('allDone')}</h2>
-                        <p class="text-2xl text-green-700">${t('noUpcomingTasks')}</p>
-                    </div>
-                `;
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
             }
-            lucide.createIcons();
         }
 
         // Render Elder Meds Page
         function renderMedsPage() {
             const container = document.getElementById('meds-list-container');
+            if (!container) return;
             container.innerHTML = '';
             const dueMeds = mockMedications.filter(m => !m.taken);
             const takenMeds = mockMedications.filter(m => m.taken);
@@ -697,7 +731,7 @@ function getCaregiverUI() {
             if (dueMeds.length > 0) {
                 dueMeds.forEach(med => {
                     container.innerHTML += `
-                        <div id="med-card-${med.id}" class="bg-white p-6 rounded-2xl shadow-lg border-4 border-blue-500 transition-all duration-300 hover:shadow-xl">
+                        <div id="med-card-${med.id}" class="bg-white p-6 rounded-2xl shadow-md border-4 border-blue-500 transition-all duration-300 hover:shadow-lg">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <h2 class="text-3xl font-bold">${med.name} <span class="text-2xl font-normal text-gray-600">(${med.dosage})</span></h2>
@@ -713,20 +747,47 @@ function getCaregiverUI() {
                         </div>
                     `;
                 });
-            } else { /* ... all done card ... */ }
+            } else { 
+                container.innerHTML = `
+                    <div class="bg-green-100 p-6 rounded-2xl shadow-md border-4 border-green-500 flex flex-col items-center">
+                        <i data-lucide="check-circle" class="h-16 w-16 text-green-600 mb-4"></i>
+                        <h2 class="text-3xl font-bold text-green-800">${t('allDone')}</h2>
+                        <p class="text-2xl text-green-700">${t('allDoneSub')}</p>
+                    </div>
+                `;
+            }
 
-            container.innerHTML += `<h3 class="text-2xl font-semibold pt-6">${t('alreadyTaken')}</h3>`;
-            takenMeds.forEach(med => { /* ... taken med card ... */ });
-            lucide.createIcons();
+            if (takenMeds.length > 0) {
+                container.innerHTML += `<h3 class="text-2xl font-semibold text-gray-700 pt-8 mt-8 border-t">${t('alreadyTaken')}</h3>`;
+                takenMeds.forEach(med => {
+                    container.innerHTML += `
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border-4 border-gray-300 opacity-70">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-3xl font-bold text-gray-600 line-through">${med.name} <span class="text-2xl font-normal">(${med.dosage})</span></h2>
+                                    <p class="text-2xl text-gray-500">${med.instruction}</p>
+                                </div>
+                                <i data-lucide="check-circle" class="h-12 w-12 text-green-500"></i>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
         
         // Render Elder Contacts Page (Dynamic)
         function renderContactsPage() {
             const container = document.getElementById('contacts-list-container');
+            if (!container) return;
             container.innerHTML = ''; // Clear old list
             mockContacts.forEach(contact => {
                 container.innerHTML += `
-                    <a href="tel:${contact.number}" class="bg-white p-6 rounded-2xl shadow-lg flex items-center justify-between transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-100">
+                    <a href="tel:${contact.number}" class="bg-white p-6 rounded-2xl shadow-md flex items-center justify-between transition-all duration-300 hover:shadow-lg hover:scale-[1.03] active:scale-100">
                         <div class="flex items-center">
                             <i data-lucide="${contact.icon}" class="h-12 w-12 text-blue-500 mr-6"></i>
                             <div>
@@ -738,16 +799,21 @@ function getCaregiverUI() {
                     </a>
                 `;
             });
-            lucide.createIcons();
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
 
         // Render Elder Nearby Page (Dynamic)
         function renderNearbyPage() {
             const container = document.getElementById('nearby-list-container');
+            if (!container) return;
             container.innerHTML = '';
             mockNearbyServices.forEach(service => {
                 container.innerHTML += `
-                    <div class="bg-white p-6 rounded-2xl shadow-lg flex items-center justify-between transition-all duration-300 hover:shadow-xl">
+                    <div class="bg-white p-6 rounded-2xl shadow-md flex items-center justify-between transition-all duration-300 hover:shadow-lg">
                         <div class="flex items-center">
                             <i data-lucide="${service.icon}" class="h-12 w-12 text-purple-500 mr-6"></i>
                             <div>
@@ -755,20 +821,27 @@ function getCaregiverUI() {
                                 <p class="text-2xl text-gray-600">${service.distance}</p>
                             </div>
                         </div>
-                        <i data-lucide="navigation" class="h-10 w-10 text-blue-500"></i>
+                        <button class="text-blue-500 hover:text-blue-700">
+                            <i data-lucide="navigation" class="h-10 w-10"></i>
+                        </button>
                     </div>
                 `;
             });
-            lucide.createIcons();
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
 
         // Render Elder Community Page (Dynamic)
         function renderCommunityPage() {
             const container = document.getElementById('community-events-container');
+            if (!container) return;
             container.innerHTML = '';
             mockCommunityEvents.forEach(event => {
                 container.innerHTML += `
-                    <div class="bg-white p-6 rounded-2xl shadow-lg flex items-center transition-all duration-300 hover:shadow-xl">
+                    <div class="bg-white p-6 rounded-2xl shadow-md flex items-center transition-all duration-300 hover:shadow-lg">
                         <i data-lucide="${event.icon}" class="h-12 w-12 text-orange-500 mr-6"></i>
                         <div>
                             <h2 class="text-3xl font-bold">${event.name}</h2>
@@ -778,33 +851,44 @@ function getCaregiverUI() {
                     </div>
                 `;
             });
-            lucide.createIcons();
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
         
         // --- Caregiver Render Functions (ALL FEATURES ADDED) ---
         function renderCaregiverNav() {
             const navItems = [
-                { name: t('atAGlance'), page: 'dashboard', icon: 'home' },
+                { name: t('atAGlance'), page: 'dashboard', icon: 'layout-dashboard' },
                 { name: t('manageMeds'), page: 'manage_meds', icon: 'pill' },
                 { name: t('vitals'), page: 'manage_vitals', icon: 'line-chart' },
                 { name: t('manageContacts'), page: 'manage_contacts', icon: 'users' },
                 { name: t('manageSchedule'), page: 'manage_schedule', icon: 'calendar-days' },
                 { name: t('manageNearby'), page: 'manage_nearby', icon: 'map-pin' },
                 { name: t('manageCommunity'), page: 'manage_community', icon: 'coffee' },
+                // --- ADDED: Settings nav item ---
+                { name: t('settings'), page: 'manage_settings', icon: 'settings' },
             ];
             const container = document.getElementById('caregiver-nav-list');
+            if (!container) return;
             container.innerHTML = '';
             navItems.forEach(item => {
                 container.innerHTML += `
                     <li>
-                        <button data-page="${item.page}" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-300 ${currentPage === item.page ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}">
+                        <button data-page="${item.page}" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-300 ${currentPage === item.page ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}">
                             <i data-lucide="${item.icon}" class="h-5 w-5"></i>
-                            <span class="font-medium">${item.name}</span>
+                            <span>${item.name}</span>
                         </button>
                     </li>
                 `;
             });
-            lucide.createIcons();
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
         
         function renderCaregiverPage() {
@@ -816,6 +900,8 @@ function getCaregiverUI() {
                 'manage_schedule': renderCaregiverManageSchedule,
                 'manage_nearby': renderCaregiverManageNearby,
                 'manage_community': renderCaregiverManageCommunity,
+                // --- ADDED: Settings page renderer ---
+                'manage_settings': renderCaregiverManageSettings,
             };
             
             const renderer = renderers[currentPage];
@@ -826,32 +912,42 @@ function getCaregiverUI() {
                 const container = document.getElementById(`page-caregiver-${currentPage}`);
                 if (container) {
                     const pageTitle = (currentPage.split('_').pop() || 'Page');
-                    container.innerHTML = `<div class="bg-white p-6 rounded-xl shadow-lg"><h2 class="text-xl font-semibold mb-4">Manage ${pageTitle}</h2><p>This is a placeholder for the "${pageTitle}" management page.</p></div>`;
+                    container.innerHTML = `<div class="bg-white p-6 rounded-2xl shadow-lg"><h2 class="text-xl font-semibold mb-4">Manage ${pageTitle}</h2><p>This is a placeholder for the "${pageTitle}" management page.</p></div>`;
                 }
             }
-            lucide.createIcons();
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
-
+        
+        // Placeholder for Dashboard
         function renderCaregiverDashboard() {
             const container = document.getElementById('page-caregiver-dashboard');
-            container.innerHTML = `...`; // Same as before
-            // ... (Dashboard rendering code) ...
+            if (!container) return;
+            container.innerHTML = `
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('atAGlance')}</h2>
+                    <p class="text-gray-600">This is the caregiver dashboard. Content to be built.</p>
+                </div>`;
         }
         
         function renderCaregiverManageMeds() {
             const container = document.getElementById('page-caregiver-manage_meds');
+            if (!container) return;
             container.innerHTML = `
-                <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageMeds')}</h2>
-                    <form id="form-add-med" class="mb-8 p-6 border rounded-lg bg-gray-50">
+                    <form id="form-add-med" class="mb-8 p-6 border rounded-lg bg-gray-50 space-y-4">
                         <h3 class="text-xl font-semibold mb-4">${t('addMed')}</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="text" id="new-med-name" placeholder="${t('medName')}" class="p-3 border rounded-lg" required>
-                            <input type="text" id="new-med-dosage" placeholder="${t('dosage')}" class="p-3 border rounded-lg">
-                            <input type="time" id="new-med-time" placeholder="${t('time')}" class="p-3 border rounded-lg" required>
-                            <input type="text" id="new-med-instruction" placeholder="${t('instructions')}" class="p-3 border rounded-lg">
+                            <input type="text" id="new-med-name" placeholder="${t('medName')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <input type="text" id="new-med-dosage" placeholder="${t('dosage')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="time" id="new-med-time" placeholder="${t('time')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <input type="text" id="new-med-instruction" placeholder="${t('instructions')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
-                        <button type="submit" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addMed')}</button>
+                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addMed')}</button>
                     </form>
                     <h3 class="text-xl font-semibold mb-4">Current Medications</h3>
                     <div id="manage-meds-list" class="space-y-4"></div>
@@ -865,46 +961,98 @@ function getCaregiverUI() {
             listContainer.innerHTML = '';
             mockMedications.forEach(med => {
                 listContainer.innerHTML += `
-                    <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
+                    <div class="flex items-center justify-between p-4 bg-white border rounded-lg">
                         <div>
                             <p class="font-bold text-lg">${med.name} <span class="text-base font-normal text-gray-600">(${med.dosage || 'N/A'})</span></p>
                             <p class="text-sm text-gray-500">${med.instruction} @ ${med.time}</p>
                         </div>
-                        <button data-id="${med.id}" class="btn-delete-med text-red-500 hover:text-red-700 transition-all duration-300">
+                        <button data-id="${med.id}" class="btn-delete-med text-red-500 hover:text-red-700 transition-all duration-300 p-2">
                             <i data-lucide="trash-2" class="h-5 w-5"></i>
                         </button>
                     </div>`;
             });
-            lucide.createIcons();
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
 
+        // --- ADDED: New render function for the Settings page ---
+        function renderCaregiverManageSettings() {
+            const container = document.getElementById('page-caregiver-manage_settings');
+            if (!container) return;
+            container.innerHTML = `
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('settings')}</h2>
+                    
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <h3 class="text-lg font-semibold">${t('enableNotifications')}</h3>
+                        <p class="text-gray-600 mb-4">${t('enableNotificationsSub')}</p>
+                        <button id="btn-enable-notifications" class="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95 flex items-center justify-center">
+                            <i data-lucide="bell-ring" class="h-5 w-5 mr-2"></i>
+                            <span>${t('enableNotifications')}</span>
+                        </button>
+                    </div>
+
+                </div>`;
+            
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        // Placeholder for Vitals
         function renderCaregiverManageVitals() {
             const container = document.getElementById('page-caregiver-manage_vitals');
-            container.innerHTML = `...`; // Same as before
-            // ... (Vitals rendering code) ...
+            if (!container) return;
+            container.innerHTML = `
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('vitals')}</h2>
+                    <p class="text-gray-600">Vitals management UI to be built.</p>
+                    <div id="manage-vitals-list" class="space-y-4 mt-4"></div>
+                </div>`;
             renderManageVitalsList();
         }
 
         function renderManageVitalsList() {
-            // ... Same as before ...
+             const listContainer = document.getElementById('manage-vitals-list');
+            if (!listContainer) return;
+            listContainer.innerHTML = '';
+            mockVitals.forEach(vital => {
+                listContainer.innerHTML += `
+                    <div class="flex items-center justify-between p-4 bg-white border rounded-lg">
+                        <div>
+                            <p class="font-bold text-lg">${vital.date}</p>
+                            <p class="text-sm text-gray-500">BP: ${vital.bp} | Sugar: ${vital.sugar}</p>
+                        </div>
+                        <button data-id="${vital.id}" class="btn-delete-vital text-red-500 hover:text-red-700 transition-all duration-300 p-2">
+                            <i data-lucide="trash-2" class="h-5 w-5"></i>
+                        </button>
+                    </div>`;
+            });
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
-        
-        // --- NEW CAREGIVER PAGES ---
         
         function renderCaregiverManageContacts() {
             const container = document.getElementById('page-caregiver-manage_contacts');
+            if (!container) return;
             container.innerHTML = `
-                <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageContacts')}</h2>
-                    <form id="form-add-contact" class="mb-8 p-6 border rounded-lg bg-gray-50">
+                    <form id="form-add-contact" class="mb-8 p-6 border rounded-lg bg-gray-50 space-y-4">
                         <h3 class="text-xl font-semibold mb-4">${t('addContact')}</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="text" id="new-contact-name" placeholder="${t('contactName')}" class="p-3 border rounded-lg" required>
-                            <input type="text" id="new-contact-relation" placeholder="${t('relation')}" class="p-3 border rounded-lg">
-                            <input type="tel" id="new-contact-number" placeholder="${t('phone')}" class="p-3 border rounded-lg" required>
-                            <input type="text" id="new-contact-icon" placeholder="Icon (e.g., users)" class="p-3 border rounded-lg">
+                            <input type="text" id="new-contact-name" placeholder="${t('contactName')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <input type="text" id="new-contact-relation" placeholder="${t('relation')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="tel" id="new-contact-number" placeholder="${t('phone')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <input type="text" id="new-contact-icon" placeholder="Icon (e.g., users)" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
-                        <button type="submit" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addContact')}</button>
+                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addContact')}</button>
                     </form>
                     <h3 class="text-xl font-semibold mb-4">Current Contacts</h3>
                     <div id="manage-contacts-list" class="space-y-4"></div>
@@ -918,7 +1066,7 @@ function getCaregiverUI() {
             listContainer.innerHTML = '';
             mockContacts.forEach(contact => {
                 listContainer.innerHTML += `
-                    <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
+                    <div class="flex items-center justify-between p-4 bg-white border rounded-lg">
                         <div class="flex items-center">
                             <i data-lucide="${contact.icon || 'user'}" class="h-8 w-8 text-blue-500 mr-4"></i>
                             <div>
@@ -926,30 +1074,35 @@ function getCaregiverUI() {
                                 <p class="text-sm text-gray-500">${contact.relation} | ${contact.number}</p>
                             </div>
                         </div>
-                        <button data-id="${contact.id}" class="btn-delete-contact text-red-500 hover:text-red-700 transition-all duration-300">
+                        <button data-id="${contact.id}" class="btn-delete-contact text-red-500 hover:text-red-700 transition-all duration-300 p-2">
                             <i data-lucide="trash-2" class="h-5 w-5"></i>
                         </button>
                     </div>`;
             });
-            lucide.createIcons();
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
         
         function renderCaregiverManageSchedule() {
             const container = document.getElementById('page-caregiver-manage_schedule');
+            if (!container) return;
             container.innerHTML = `
-                <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageSchedule')}</h2>
-                    <form id="form-add-schedule" class="mb-8 p-6 border rounded-lg bg-gray-50">
+                    <form id="form-add-schedule" class="mb-8 p-6 border rounded-lg bg-gray-50 space-y-4">
                         <h3 class="text-xl font-semibold mb-4">${t('addEntry')}</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="text" id="new-schedule-title" placeholder="${t('title')}" class="p-3 border rounded-lg" required>
-                            <input type="time" id="new-schedule-time" class="p-3 border rounded-lg" required>
-                            <select id="new-schedule-type" class="p-3 border rounded-lg">
+                            <input type="text" id="new-schedule-title" placeholder="${t('title')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <input type="time" id="new-schedule-time" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <select id="new-schedule-type" class="p-3 border rounded-lg w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="appointment">${t('appointment')}</option>
                                 <option value="event">${t('event')}</option>
                             </select>
                         </div>
-                        <button type="submit" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addEntry')}</button>
+                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addEntry')}</button>
                     </form>
                     <h3 class="text-xl font-semibold mb-4">Current Schedule</h3>
                     <div id="manage-schedule-list" class="space-y-4"></div>
@@ -964,7 +1117,7 @@ function getCaregiverUI() {
             mockSchedule.forEach(item => {
                 const icon = item.type === 'appointment' ? 'stethoscope' : 'users';
                 listContainer.innerHTML += `
-                    <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
+                    <div class="flex items-center justify-between p-4 bg-white border rounded-lg">
                         <div class="flex items-center">
                             <i data-lucide="${icon}" class="h-8 w-8 text-indigo-500 mr-4"></i>
                             <div>
@@ -972,22 +1125,32 @@ function getCaregiverUI() {
                                 <p class="text-sm text-gray-500">${t(item.type)} at ${item.time}</p>
                             </div>
                         </div>
-                        <button data-id="${item.id}" class="btn-delete-schedule text-red-500 hover:text-red-700 transition-all duration-300">
+                        <button data-id="${item.id}" class="btn-delete-schedule text-red-500 hover:text-red-700 transition-all duration-300 p-2">
                             <i data-lucide="trash-2" class="h-5 w-5"></i>
                         </button>
                     </div>`;
             });
-            lucide.createIcons();
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
         
         function renderCaregiverManageNearby() {
             const container = document.getElementById('page-caregiver-manage_nearby');
+            if (!container) return;
             container.innerHTML = `
-                <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageNearby')}</h2>
-                    <form id="form-add-nearby" class="mb-8 p-6 border rounded-lg bg-gray-50">
-                        ... (Form for Name, Distance, Icon) ...
-                        <button type="submit" class="mt-4 w-full bg-blue-500 ...">${t('addPlace')}</button>
+                    <form id="form-add-nearby" class="mb-8 p-6 border rounded-lg bg-gray-50 space-y-4">
+                        <h3 class="text-xl font-semibold mb-4">${t('addPlace')}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="text" id="new-nearby-name" placeholder="${t('placeName')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <input type="text" id="new-nearby-distance" placeholder="${t('distance')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="text" id="new-nearby-icon" placeholder="Icon (e.g., pill)" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="map-pin">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addPlace')}</button>
                     </form>
                     <h3 class="text-xl font-semibold mb-4">Current Places</h3>
                     <div id="manage-nearby-list" class="space-y-4"></div>
@@ -999,31 +1162,74 @@ function getCaregiverUI() {
             const listContainer = document.getElementById('manage-nearby-list');
             if (!listContainer) return;
             listContainer.innerHTML = '';
-            mockNearbyServices.forEach(item => { /* ... render item ... */ });
-            lucide.createIcons();
+            mockNearbyServices.forEach(item => {
+                listContainer.innerHTML += `
+                    <div class="flex items-center justify-between p-4 bg-white border rounded-lg">
+                        <div class="flex items-center">
+                            <i data-lucide="${item.icon || 'map-pin'}" class="h-8 w-8 text-purple-500 mr-4"></i>
+                            <div>
+                                <p class="font-bold text-lg">${item.name}</p>
+                                <p class="text-sm text-gray-500">${item.distance}</p>
+                            </div>
+                        </div>
+                        <button data-id="${item.id}" class="btn-delete-nearby text-red-500 hover:text-red-700 transition-all duration-300 p-2">
+                            <i data-lucide="trash-2" class="h-5 w-5"></i>
+                        </button>
+                    </div>`;
+            });
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
         
-        // function renderCaregiverManageCommunity() {
-        //     const container = document.getElementById('page-caregiver-manage_community');
-        //     container.innerHTML = `
-        //         <div class="bg-white p-6 rounded-xl shadow-lg">
-        //             <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageCommunity')}</h2>
-        //             <form id="form-add-community" class="mb-8 p-6 border rounded-lg bg-gray-50">
-        //                 ... (Form for Event Name, Time, Location) ...
-        //                 <button type="submit" class="mt-4 w-full bg-blue-500 ...">${t('addEvent')}</button>
-        //             </form>
-        //             <h3 class="text-xl font-semibold mb-4">Current Events</h3>
-        //             <div id="manage-community-list" class="space-y-4"></div>
-        //         </div>`;
-        //     renderManageCommunityList();
-        // }
+        function renderCaregiverManageCommunity() {
+            const container = document.getElementById('page-caregiver-manage_community');
+            if (!container) return;
+            container.innerHTML = `
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageCommunity')}</h2>
+                    <form id="form-add-community" class="mb-8 p-6 border rounded-lg bg-gray-50 space-y-4">
+                        <h3 class="text-xl font-semibold mb-4">${t('addEvent')}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="text" id="new-community-name" placeholder="${t('eventName')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <input type="text" id="new-community-time" placeholder="${t('time')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <input type="text" id="new-community-location" placeholder="${t('location')}" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="text" id="new-community-icon" placeholder="Icon (e.g., coffee)" class="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="users">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addEvent')}</button>
+                    </form>
+                    <h3 class="text-xl font-semibold mb-4">Current Events</h3>
+                    <div id="manage-community-list" class="space-y-4"></div>
+                </div>`;
+            renderManageCommunityList();
+        }
         
         function renderManageCommunityList() {
             const listContainer = document.getElementById('manage-community-list');
             if (!listContainer) return;
             listContainer.innerHTML = '';
-            mockCommunityEvents.forEach(item => { /* ... render item ... */ });
-            lucide.createIcons();
+            mockCommunityEvents.forEach(item => {
+                listContainer.innerHTML += `
+                    <div class="flex items-center justify-between p-4 bg-white border rounded-lg">
+                        <div class="flex items-center">
+                            <i data-lucide="${item.icon || 'users'}" class="h-8 w-8 text-orange-500 mr-4"></i>
+                            <div>
+                                <p class="font-bold text-lg">${item.name}</p>
+                                <p class="text-sm text-gray-500">${item.time} | ${item.location}</p>
+                            </div>
+                        </div>
+                        <button data-id="${item.id}" class="btn-delete-community text-red-500 hover:text-red-700 transition-all duration-300 p-2">
+                            <i data-lucide="trash-2" class="h-5 w-5"></i>
+                        </button>
+                    </div>`;
+            });
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
         }
 
 
@@ -1047,6 +1253,7 @@ function getCaregiverUI() {
         function navigate(page) {
             if (showSOS) return;
             currentPage = page;
+            window.scrollTo(0, 0); // Scroll to top on page change
             renderApp();
         }
 
@@ -1064,12 +1271,76 @@ function getCaregiverUI() {
             }
         }
 
-        function openSOS() { /* ... Same as before ... */ }
-        function closeSOS(cancelled = false) { /* ... Same as before ... */ }
-        function openModal({ title, text, confirmText, onConfirm }) { /* ... Same as before ... */ }
-        function closeModal() { /* ... Same as before ... */ }
+        function openSOS() {
+            showSOS = true;
+            renderApp();
+            
+            // Start countdown logic
+            let count = 10;
+            const timerEl = document.getElementById('sos-countdown-timer');
+            const countdownEl = document.getElementById('sos-status-countdown');
+            const sendingEl = document.getElementById('sos-status-sending');
+            const sentEl = document.getElementById('sos-status-sent');
 
-        // --- Caregiver Form Handlers (NEW) ---
+            if (!timerEl || !countdownEl || !sendingEl || !sentEl) return;
+
+            countdownEl.classList.remove('hidden');
+            sendingEl.classList.add('hidden');
+            sentEl.classList.add('hidden');
+            
+            timerEl.innerText = count;
+            
+            sosCountdownTimer = setInterval(() => {
+                count--;
+                timerEl.innerText = count;
+                if (count === 0) {
+                    clearInterval(sosCountdownTimer);
+                    // Trigger "Sending" state
+                    countdownEl.classList.add('hidden');
+                    sendingEl.classList.remove('hidden');
+                    
+                    // Simulate network request
+                    setTimeout(() => {
+                        // Trigger "Sent" state
+                        sendingEl.classList.add('hidden');
+                        sentEl.classList.remove('hidden');
+                    }, 2000);
+                }
+            }, 1000);
+        }
+
+        function closeSOS(cancelled = false) {
+            if (sosCountdownTimer) {
+                clearInterval(sosCountdownTimer);
+                sosCountdownTimer = null;
+            }
+            showSOS = false;
+            renderApp();
+            if (cancelled) {
+                showToast("SOS Cancelled");
+            }
+        }
+        
+        function openModal({ title, text, confirmText, onConfirm }) {
+            const modal = document.getElementById('confirmation-modal');
+            if (!modal) return;
+            
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-text').innerText = text;
+            document.getElementById('modal-btn-confirm').innerText = confirmText || t('call');
+            
+            modalConfirmCallback = onConfirm;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('confirmation-modal');
+            if (modal) modal.classList.add('hidden');
+            modalConfirmCallback = null;
+        }
+
+        // --- Caregiver Form Handlers ---
         function handleAddMed(e) {
             e.preventDefault();
             const newMed = {
@@ -1092,8 +1363,10 @@ function getCaregiverUI() {
             renderManageMedsList();
         }
         
-        function handleAddVital(e) { /* ... Same as before ... */ }
-        function handleDeleteVital(id) { /* ... Same as before ... */ }
+        function handleDeleteVital(id) {
+            mockVitals = mockVitals.filter(v => v.id !== id);
+            renderManageVitalsList();
+        }
         
         function handleAddContact(e) {
             e.preventDefault();
@@ -1136,105 +1409,6 @@ function getCaregiverUI() {
             renderManageScheduleList();
         }
         
-        // function renderCaregiverManageNearby() {
-        //     const container = document.getElementById('page-caregiver-manage_nearby');
-        //     container.innerHTML = `
-        //         <div class="bg-white p-6 rounded-xl shadow-lg">
-        //             <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageNearby')}</h2>
-        //             <form id="form-add-nearby" class="mb-8 p-6 border rounded-lg bg-gray-50">
-        //                 <h3 class="text-xl font-semibold mb-4">${t('addPlace')}</h3>
-        //                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        //                     <input type="text" id="new-nearby-name" placeholder="${t('placeName')}" class="p-3 border rounded-lg" required>
-        //                     <input type="text" id="new-nearby-distance" placeholder="${t('distance')}" class="p-3 border rounded-lg">
-        //                     <input type="text" id="new-nearby-icon" placeholder="Icon (e.g., pill)" class="p-3 border rounded-lg" value="map-pin">
-        //                 </div>
-        //                 <button type="submit" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addPlace')}</button>
-        //             </form>
-        //             <h3 class="text-xl font-semibold mb-4">Current Places</h3>
-        //             <div id="manage-nearby-list" class="space-y-4"></div>
-        //         </div>`;
-        //     renderManageNearbyList();
-        // }
-
-        // function renderManageNearbyList() {
-        //     const listContainer = document.getElementById('manage-nearby-list');
-        //     if (!listContainer) return;
-        //     listContainer.innerHTML = '';
-        //     mockNearbyServices.forEach(item => {
-        //         listContainer.innerHTML += `
-        //             <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
-        //                 <div class="flex items-center">
-        //                     <i data-lucide="${item.icon || 'map-pin'}" class="h-8 w-8 text-purple-500 mr-4"></i>
-        //                     <div>
-        //                         <p class="font-bold text-lg">${item.name}</p>
-        //                         <p class="text-sm text-gray-500">${item.distance}</p>
-        //                     </div>
-        //                 </div>
-        //                 <button data-id="${item.id}" class="btn-delete-nearby text-red-500 hover:text-red-700 transition-all duration-300">
-        //                     <i data-lucide="trash-2" class="h-5 w-5"></i>
-        //                 </button>
-        //             </div>`;
-        //     });
-        //     lucide.createIcons();
-        // }
-        
-        function renderCaregiverManageCommunity() {
-            const container = document.getElementById('page-caregiver-manage_community');
-            container.innerHTML = `
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">${t('manageCommunity')}</h2>
-                    <form id="form-add-community" class="mb-8 p-6 border rounded-lg bg-gray-50">
-                        <h3 class="text-xl font-semibold mb-4">${t('addEvent')}</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="text" id="new-community-name" placeholder="${t('eventName')}" class="p-3 border rounded-lg" required>
-                            <input type="text" id="new-community-time" placeholder="${t('time')}" class="p-3 border rounded-lg" required>
-                            <input type="text" id="new-community-location" placeholder="${t('location')}" class="p-3 border rounded-lg">
-                            <input type="text" id="new-community-icon" placeholder="Icon (e.g., coffee)" class="p-3 border rounded-lg" value="users">
-                        </div>
-                        <button type="submit" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-5 rounded-lg font-medium transition-all duration-300 active:scale-95">${t('addEvent')}</button>
-                    </form>
-                    <h3 class="text-xl font-semibold mb-4">Current Events</h3>
-                    <div id="manage-community-list" class="space-y-4"></div>
-                </div>`;
-            renderManageCommunityList();
-        }
-        
-        // function renderManageCommunityList() {
-        //     const listContainer = document.getElementById('manage-community-list');
-        //     if (!listContainer) return;
-        //     listContainer.innerHTML = '';
-        //     mockCommunityEvents.forEach(item => {
-        //         listContainer.innerHTML += `
-        //             <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
-        //                 <div class="flex items-center">
-        //                     <i data-lucide="${item.icon || 'users'}" class="h-8 w-8 text-orange-500 mr-4"></i>
-        //                     <div>
-        //                         <p class="font-bold text-lg">${item.name}</p>
-        //                         <p class="text-sm text-gray-500">${item.time} | ${item.location}</p>
-        //                     </div>
-        //                 </div>
-        //                 <button data-id="${item.id}" class="btn-delete-community text-red-500 hover:text-red-700 transition-all duration-300">
-        //                     <i data-lucide="trash-2" class="h-5 w-5"></i>
-        //                 </button>
-        //             </div>`;
-        //     });
-        //     lucide.createIcons();
-        // }
-
-
-
-
-
-        // --- STATE HANDLERS ---
-        
-        
-        
-        // function handleDeleteSchedule(id) {
-        //     mockSchedule = mockSchedule.filter(s => s.id !== id);
-        //     renderManageScheduleList();
-        // }
-        
-        // NEW HANDLERS
         function handleAddNearby(e) {
             e.preventDefault();
             const newNearby = {
@@ -1274,46 +1448,66 @@ function getCaregiverUI() {
             renderManageCommunityList();
         }
         
-        // ... (Add/Delete handlers for Nearby and Community) ...
+        // --- EVENT LISTENERS (for Static UI) ---
+        // This function is called by renderUI() AFTER login is successful
+        function initStaticUI() {
+            // This flag prevents listeners from being added multiple times
+            if (window.staticUiInitialized) return;
+            window.staticUiInitialized = true;
+            
+            console.log("Initializing Static UI Listeners...");
 
-        // --- EVENT LISTENERS ---
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
+            // NEW: Logout Button
+            document.getElementById('logoutBtnStatic')?.addEventListener('click', async () => {
+                await supabase.auth.signOut();
+                currentUser = null;
+                window.staticUiInitialized = false; // Reset flag
+                window.location.reload(); // Easiest way to go back to login
+            });
             
             // Language switchers
-            document.getElementById('lang-en').addEventListener('click', () => setLanguage('en'));
-            document.getElementById('lang-hi').addEventListener('click', () => setLanguage('hi'));
-            document.getElementById('lang-mr').addEventListener('click', () => setLanguage('mr'));
+            document.getElementById('lang-en')?.addEventListener('click', () => setLanguage('en'));
+            document.getElementById('lang-hi')?.addEventListener('click', () => setLanguage('hi'));
+            document.getElementById('lang-mr')?.addEventListener('click', () => setLanguage('mr'));
 
             // View toggle
-            document.getElementById('view-toggle-btn').addEventListener('click', toggleView);
+            document.getElementById('view-toggle-btn')?.addEventListener('click', toggleView);
 
             // SOS Buttons
-            document.getElementById('btn-sos-open').addEventListener('click', openSOS);
-            document.getElementById('btn-sos-cancel').addEventListener('click', () => closeSOS(true));
-            document.getElementById('btn-sos-ok').addEventListener('click', () => closeSOS(false));
+            document.getElementById('btn-sos-open')?.addEventListener('click', openSOS);
+            document.getElementById('btn-sos-cancel')?.addEventListener('click', () => closeSOS(true));
+            document.getElementById('btn-sos-ok')?.addEventListener('click', () => closeSOS(false));
 
             // Modal Buttons
-            document.getElementById('modal-btn-cancel').addEventListener('click', closeModal);
-            document.getElementById('modal-btn-confirm').addEventListener('click', () => {
+            document.getElementById('modal-btn-cancel')?.addEventListener('click', closeModal);
+            document.getElementById('modal-btn-confirm')?.addEventListener('click', () => {
                 if (modalConfirmCallback) modalConfirmCallback();
                 closeModal();
             });
             
             // Elder - Doctor on Call Modal Button
-            document.getElementById('btn-open-call-modal').addEventListener('click', () => {
+            document.getElementById('btn-open-call-modal')?.addEventListener('click', () => {
                 openModal({
                     title: t('callDoctorTitle'),
                     text: t('callDoctorText'),
                     confirmText: t('call'),
-                    onConfirm: () => { console.log("Simulating call..."); }
+                    onConfirm: () => { 
+                        console.log("Simulating call...");
+                        showToast("Calling doctor...");
+                    }
                 });
             });
+
+            // --- ADDED: Listener for the new Enable Notifications button ---
+            document.getElementById('btn-enable-notifications')?.addEventListener('click', enableNotifications);
 
             // Navigation (Event Delegation)
             document.body.addEventListener('click', (e) => {
                 const navButton = e.target.closest('.nav-btn');
-                if (navButton) navigate(navButton.dataset.page);
+                // Ensure we're not clicking the auth-logic nav buttons
+                if (navButton && navButton.closest('#app') === null) {
+                    navigate(navButton.dataset.page);
+                }
             });
             
             // Dynamic Content Handlers (Event Delegation)
@@ -1346,7 +1540,6 @@ function getCaregiverUI() {
                     handleDeleteSchedule(parseInt(deleteScheduleButton.dataset.id));
                     return;
                 }
-                // NEW
                 const deleteNearbyButton = e.target.closest('.btn-delete-nearby');
                 if (deleteNearbyButton) {
                     handleDeleteNearby(parseInt(deleteNearbyButton.dataset.id));
@@ -1362,18 +1555,23 @@ function getCaregiverUI() {
             // Caregiver Form Submissions
             document.body.addEventListener('submit', (e) => {
                 if (e.target.id === 'form-add-med') handleAddMed(e);
-                if (e.target.id === 'form-add-vital') handleAddVital(e);
+                // if (e.target.id === 'form-add-vital') handleAddVital(e); // No add form for vitals yet
                 if (e.target.id === 'form-add-contact') handleAddContact(e);
                 if (e.target.id === 'form-add-schedule') handleAddSchedule(e);
-                // NEW
                 if (e.target.id === 'form-add-nearby') handleAddNearby(e);
                 if (e.target.id === 'form-add-community') handleAddCommunity(e);
             });
 
-            // Initial Render
+            // Initial Render of the static UI
             renderApp();
-        });
+        }
+        
+        // REMOVED the DOMContentLoaded listener for initStaticUI()
+        // It is now called correctly by renderUI() after login.
 
         if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/service-worker.js");
+            navigator.serviceWorker.register("/service-worker.js")
+                .catch(err => console.log("SW reg failed", err));
         }
+
+

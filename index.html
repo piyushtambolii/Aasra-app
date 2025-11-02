@@ -7,11 +7,17 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
     <title>Aasra App</title>
-    <!-- 1. Tailwind CSS load karna (FIXED URL) -->
+    <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 2. Lucide Icons load karna (FIXED URL) -->
+    <!-- 2. Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script> -->
+    <!-- 3. Supabase -->
+    <script type="module">
+        import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+        const supabaseUrl = "https://gzivkrzoitikwtrzmiah.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIEncrypted-Key";
+        window.supabase = createClient(supabaseUrl, supabaseKey);
+    </script>
 
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ffffff">
@@ -22,7 +28,7 @@
         .hidden {
             display: none;
         }
-        /* Font load karna (CHANGED) */
+        /* Font load karna */
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Noto Sans', 'Noto Sans Devanagari', 'sans-serif';
@@ -58,13 +64,26 @@
         .toast {
             animation: slideInUp 0.5s ease-out forwards, slideOutDown 0.5s ease-in 3.5s forwards;
         }
+        
+        /* Make text unselectable */
+        .unselectable {
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          -khtml-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          user-select: none;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-
-<!-- <div id="app"> -->
-
+<!-- 
+==================================================================
+===== 1. MAIN APP CONTAINER (HIDDEN BY DEFAULT) =====
+==================================================================
+-->
+<div id="main-app-container" class="hidden">
 
     <!-- 1. Language Switcher -->
     <div class="flex justify-center space-x-2 bg-gray-900 p-2 sticky top-0 z-50">
@@ -88,17 +107,16 @@
 
     <!-- 3. Main Content Area -->
     <div class="p-4 md:p-8 max-w-4xl mx-auto pb-24">
-        <button id="googleLoginBtn" class="bg-red-500 text-white p-3 rounded-lg">
-  Login with Google
-</button>
-
-
+        
         <!-- ===== ELDER VIEW ===== -->
         <div id="elder-view-container">
             <!-- Elder Header -->
             <div class="flex items-center justify-between mb-6">
                 <h1 class="text-4xl font-bold text-blue-600">Aasra</h1>
-                <i data-lucide="bell" class="text-gray-500 h-8 w-8"></i>
+                <!-- LOGOUT BUTTON -->
+                <button id="logoutBtnStatic" class="text-gray-500 hover:text-red-500 transition-all duration-300 active:scale-90" title="Logout">
+                    <i data-lucide="log-out" class="h-8 w-8"></i>
+                </button>
             </div>
  
 
@@ -182,7 +200,9 @@
             <!-- Page: Meds -->
             <div id="page-elder-meds" class="hidden pb-24">
                 <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="yourMeds">Your Medications</h1>
-                <div id="meds-list-container" class="space-y-6"></div>
+                <div id="meds-list-container" class="space-y-6">
+                    <!-- Meds will be added by JS from Supabase -->
+                </div>
             </div>
 
             <!-- Page: Contacts -->
@@ -229,6 +249,23 @@
                 </button>
             </div>
 
+            <!-- Page: Profile (NEW) -->
+            <div id="page-elder-profile" class="hidden pb-24">
+                <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="profile">Your Profile</h1>
+                
+                <div class="bg-white p-6 rounded-2xl shadow-lg border-4 border-indigo-500">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4" data-i18n="shareYourId">Share Your ID</h2>
+                    <p class="text-lg text-gray-600 mb-6" data-i18n="shareYourIdSub">Give this ID to your caregiver so they can connect to your account.</p>
+                    
+                    <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-between">
+                        <code id="profile-user-id" class="text-lg font-mono text-gray-700 unselectable">Loading...</code>
+                        <button id="profile-copy-id-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg transition-all duration-300 active:scale-90">
+                            <i data-lucide="copy" class="h-6 w-6"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- ===== CAREGIVER VIEW ===== -->
@@ -250,6 +287,7 @@
                 <div id="page-caregiver-manage_schedule" class="hidden"></div>
                 <div id="page-caregiver-manage_nearby" class="hidden"></div>
                 <div id="page-caregiver-manage_community" class="hidden"></div>
+                <div id="page-caregiver-manage_settings" class="hidden"></div>
             </main>
         </div>
 
@@ -261,8 +299,24 @@
     </nav>
 
 
-<!-- </div> -->
+</div> <!-- End of #main-app-container -->
 
+
+<!-- 
+==================================================================
+===== 2. AUTH CONTAINER (VISIBLE BY DEFAULT) =====
+==================================================================
+-->
+<div id="app">
+    <!-- Login/Role Picker UI will be injected here by script.js -->
+</div>
+
+
+<!-- 
+==================================================================
+===== 3. MODALS & TOASTERS =====
+==================================================================
+-->
 
     <!-- 5. SOS Modal -->
     <div id="sos-modal-container" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center text-white p-8">
@@ -299,30 +353,17 @@
             </div>
         </div>
     </div>
-    <div id="app"></div>
-    <!-- 7. Toast Notification (NEW) -->
+
+    <!-- 7. Toast Notification -->
     <div id="toast-container" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50">
         <!-- Toast messages will be injected here -->
     </div>
 
 
     <!-- 8. JavaScript Logic -->
-
-    <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/service-worker.js")
-      .catch(err => console.log("SW reg failed", err));
-  });
-}
-</script>
-
     <script type="module" src="/script.js"></script>
 
 
 </body>
 </html>
-
-
 
