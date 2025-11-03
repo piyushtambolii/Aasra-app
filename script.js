@@ -1,7 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// IMPORTANT SECURITY NOTE:
+// The Supabase keys below should be replaced with your own ANON/PUBLIC key, NOT the service_role key.
+// The anon key has Row Level Security (RLS) enabled, which is essential for production security.
+// Get your anon key from: https://app.supabase.com/project/_/settings/api
+// For now, using a placeholder - replace with your actual anon key
 const supabaseUrl = "https://gzivkrzoitikwtrzmiah.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6aXZrcnpvaXRpa3d0cnptaWFoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjAwNjA1NSwiZXhwIjoyMDc3NTgyMDU1fQ.x_Lg6UyKT6S38p5zkqIxf_vhM0bDTo0QyCNvcZSqDug";
+const supabaseKey = "YOUR_SUPABASE_ANON_KEY_HERE"; // Replace with your anon key
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 let currentUser = null;
@@ -356,26 +361,217 @@ async function loginWithGoogle() {
 }
 
 
+// Helper function to convert base64 VAPID key to Uint8Array
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 async function enableNotifications() {
-  const permission = await Notification.requestPermission();
+  try {
+    // Check if notifications are supported
+    if (!("Notification" in window)) {
+      showToast("❌ Notifications not supported on this device");
+      return;
+    }
+
+    // Check if service worker is supported
+    if (!("serviceWorker" in navigator)) {
+      showToast("❌ Service Worker not supported");
+      return;
+    }
+
+    // Request permission
+    const permission = await Notification.requestPermission();
+    
+    if (permission !== "granted") {
+      showToast("❌ Notification permission denied. Please enable in browser settings.");
+      return;
+    }
+
+    // Wait for service worker to be ready
+    const registration = await navigator.serviceWorker.ready;
+    
+    // Subscribe to push notifications
+    try {
+      // Convert VAPID key from base64 to Uint8Array
+      const vapidPublicKey = "BGLwPjowyVIlRlAw9eKXKf4Rl7RzX_dkUslxYuyO8kBAxQhqsJRhVp442t9vaD_cpFyZwpS14rCQRqxuWoB3_tc";
+      const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+      
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: convertedVapidKey
+      });
+
+      // Save subscription - for authenticated users, save to Supabase; for guests, save to localStorage
+      if (currentUser && !currentUser.guest) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          await supabase.from("push_subscriptions").upsert({
+            user_id: userData.user.id,
+            subscription: subscription.toJSON()
+          }, {
+            onConflict: 'user_id'
+          });
+        }
+      } else {
+        // Guest user - save to localStorage
+        localStorage.setItem('aasra_push_subscription', JSON.stringify(subscription.toJSON()));
+      }
+
+      showToast("✅ Notifications enabled successfully!");
+      
+      // Show a test notification
+      setTimeout(() => {
+        if (registration.showNotification) {
+          registration.showNotification("Aasra Notifications Enabled", {
+            body: "You'll receive medication reminders when you're using the app",
+            icon: "/icons/icon-192.png",
+            badge: "/icons/icon-192.png",
+            vibrate: [200, 100, 200],
+            tag: "notification-test"
+          });
+        }
+      }, 1000);
+
+      // NOTE: Automatic background medication reminders require a backend server
+      // For now, reminders only work while the app is open
+      // To get real background notifications, you would need to:
+      // 1. Set up a backend server with a cron job
+      // 2. Send push notifications via Web Push API from the server
+      // 3. Store medication schedules and user subscriptions in the database
+      
+      // Only start reminders if the app is actively being used
+      startMedicationReminders();
+      
+    } catch (subscribeError) {
+      console.error("Push subscription error:", subscribeError);
+      showToast("❌ Could not subscribe to notifications: " + subscribeError.message);
+    }
+
+  } catch (error) {
+    console.error("Notification enable error:", error);
+    showToast("❌ Error enabling notifications: " + error.message);
+  }
+}
+
+
+// --- MEDICATION REMINDER SYSTEM ---
+let medicationReminderInterval = null;
+
+function startMedicationReminders() {
+  // Clear any existing interval
+  if (medicationReminderInterval) {
+    clearInterval(medicationReminderInterval);
+  }
+
+  // Check for upcoming medications every minute
+  medicationReminderInterval = setInterval(checkMedicationReminders, 60000);
   
-  if (permission !== "granted") {
-    alert("Notifications blocked. App can't alert you.");
+  // Also check immediately
+  checkMedicationReminders();
+  
+  console.log("Medication reminders started");
+}
+
+async function checkMedicationReminders() {
+  // Check if notifications are enabled
+  if (!("Notification" in window) || Notification.permission !== "granted") {
     return;
   }
 
-  const registration = await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: "BGLwPjowyVIlRlAw9eKXKf4Rl7RzX_dkUslxYuyO8kBAxQhqsJRhVp442t9vaD_cpFyZwpS14rCQRqxuWoB3_tc"
-  });
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  
+  // Load medications from localStorage if guest user
+  loadDataFromLocalStorage();
+  
+  // Check each medication
+  for (const med of mockMedications) {
+    if (!med.taken && med.time === currentTime) {
+      // Send notification for this medication
+      await sendMedicationNotification(med);
+    }
+  }
+}
 
-  await supabase.from("push_subscriptions").insert({
-    user_id: (await supabase.auth.getUser()).data.user.id,
-    subscription: subscription.toJSON()
-  });
+async function sendMedicationNotification(med) {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    
+    if (registration && registration.showNotification) {
+      await registration.showNotification("💊 Medication Reminder", {
+        body: `Time to take ${med.name} ${med.dosage}\n${med.instruction}`,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        vibrate: [200, 100, 200, 100, 200],
+        tag: `med-${med.id}`,
+        requireInteraction: true,
+        actions: [
+          { action: "taken", title: "Mark as Taken" },
+          { action: "snooze", title: "Remind in 10 min" }
+        ]
+      });
+      
+      console.log(`Sent notification for medication: ${med.name}`);
+    }
+  } catch (error) {
+    console.error("Error sending medication notification:", error);
+  }
+}
 
-  alert("Notifications enabled ✅");
+// --- LOCALSTORAGE PERSISTENCE FOR GUEST USERS ---
+function saveDataToLocalStorage() {
+  if (currentUser?.guest) {
+    try {
+      localStorage.setItem('aasra_medications', JSON.stringify(mockMedications));
+      localStorage.setItem('aasra_contacts', JSON.stringify(mockContacts));
+      localStorage.setItem('aasra_schedule', JSON.stringify(mockSchedule));
+      localStorage.setItem('aasra_vitals', JSON.stringify(mockVitals));
+      localStorage.setItem('aasra_nearby', JSON.stringify(mockNearbyServices));
+      localStorage.setItem('aasra_community', JSON.stringify(mockCommunityEvents));
+      localStorage.setItem('aasra_language', currentLanguage);
+      localStorage.setItem('aasra_view', currentView);
+    } catch (error) {
+      console.error("Error saving to localStorage:", error);
+    }
+  }
+}
+
+function loadDataFromLocalStorage() {
+  if (currentUser?.guest) {
+    try {
+      const savedMeds = localStorage.getItem('aasra_medications');
+      const savedContacts = localStorage.getItem('aasra_contacts');
+      const savedSchedule = localStorage.getItem('aasra_schedule');
+      const savedVitals = localStorage.getItem('aasra_vitals');
+      const savedNearby = localStorage.getItem('aasra_nearby');
+      const savedCommunity = localStorage.getItem('aasra_community');
+      const savedLanguage = localStorage.getItem('aasra_language');
+      const savedView = localStorage.getItem('aasra_view');
+      
+      if (savedMeds) mockMedications = JSON.parse(savedMeds);
+      if (savedContacts) mockContacts = JSON.parse(savedContacts);
+      if (savedSchedule) mockSchedule = JSON.parse(savedSchedule);
+      if (savedVitals) mockVitals = JSON.parse(savedVitals);
+      if (savedNearby) mockNearbyServices = JSON.parse(savedNearby);
+      if (savedCommunity) mockCommunityEvents = JSON.parse(savedCommunity);
+      if (savedLanguage) currentLanguage = savedLanguage;
+      if (savedView) currentView = savedView;
+    } catch (error) {
+      console.error("Error loading from localStorage:", error);
+    }
+  }
 }
 
 
@@ -383,6 +579,7 @@ async function saveRole(role) {
   // For guest users, just set the role locally and re-render
   if (currentUser?.guest) {
       currentUser.role = role;
+      saveDataToLocalStorage();
       renderUI();
       return;
   }
@@ -769,6 +966,52 @@ function renderRolePicker() {
                                 </div>
                                 <i data-lucide="check-circle" class="h-12 w-12 text-green-500"></i>
                             </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // --- FIX: Safety check for lucide ---
+            if (window.lucide) {
+              lucide.createIcons();
+            }
+        }
+        
+        // Render Elder Plan Page (Today's Plan)
+        function renderElderPlanPage() {
+            const container = document.getElementById('plan-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const combinedSchedule = getCombinedSchedule();
+            
+            if (combinedSchedule.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-green-100 p-6 rounded-2xl shadow-md border-4 border-green-500 flex flex-col items-center">
+                        <i data-lucide="check-circle" class="h-16 w-16 text-green-600 mb-4"></i>
+                        <h2 class="text-3xl font-bold text-green-800">${t('allDone')}</h2>
+                        <p class="text-2xl text-green-700">${t('noUpcomingTasks')}</p>
+                    </div>
+                `;
+            } else {
+                combinedSchedule.forEach(item => {
+                    const iconColor = item.type === 'med' ? 'blue' : item.type === 'appointment' ? 'indigo' : 'orange';
+                    container.innerHTML += `
+                        <div class="bg-white p-6 rounded-2xl shadow-md border-4 border-${iconColor}-500 transition-all duration-300 hover:shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-3xl font-bold">${item.title}</h2>
+                                    <p class="text-2xl text-gray-600">${item.instruction || ''}</p>
+                                    <p class="text-2xl font-semibold text-gray-800">Time: ${item.time}</p>
+                                </div>
+                                <i data-lucide="${item.icon}" class="h-12 w-12 text-${iconColor}-500"></i>
+                            </div>
+                            ${item.type === 'med' && !item.taken ? `
+                                <button data-id="${item.id}" class="mark-as-taken-btn mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-xl py-4 text-2xl font-bold flex items-center justify-center transition-all duration-300 active:scale-95">
+                                    <i data-lucide="check-circle" class="h-7 w-7 mr-2"></i>
+                                    ${t('markAsTaken')}
+                                </button>
+                            ` : ''}
                         </div>
                     `;
                 });
@@ -1264,6 +1507,7 @@ function renderRolePicker() {
                 setTimeout(() => {
                     const med = mockMedications.find(m => m.id === id);
                     if (med) med.taken = true;
+                    saveDataToLocalStorage(); // Save to localStorage for guest users
                     renderMedsPage();
                     updateNextReminder();
                     showToast(t('meds') + ' ' + t('markAsTaken'));
@@ -1353,6 +1597,7 @@ function renderRolePicker() {
             };
             mockMedications.push(newMed);
             mockMedications.sort((a, b) => a.time.localeCompare(b.time));
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageMedsList();
             e.target.reset();
             showToast(t('meds') + ' Added');
@@ -1360,11 +1605,13 @@ function renderRolePicker() {
 
         function handleDeleteMed(id) {
             mockMedications = mockMedications.filter(med => med.id !== id);
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageMedsList();
         }
         
         function handleDeleteVital(id) {
             mockVitals = mockVitals.filter(v => v.id !== id);
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageVitalsList();
         }
         
@@ -1378,6 +1625,7 @@ function renderRolePicker() {
                 icon: document.getElementById('new-contact-icon').value || 'user'
             };
             mockContacts.push(newContact);
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageContactsList();
             e.target.reset();
             showToast(t('addContact') + 'd');
@@ -1385,6 +1633,7 @@ function renderRolePicker() {
 
         function handleDeleteContact(id) {
             mockContacts = mockContacts.filter(c => c.id !== id);
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageContactsList();
         }
         
@@ -1399,6 +1648,7 @@ function renderRolePicker() {
             };
             mockSchedule.push(newEntry);
             mockSchedule.sort((a, b) => a.time.localeCompare(b.time));
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageScheduleList();
             e.target.reset();
             showToast(t('addEntry') + 'd');
@@ -1406,6 +1656,7 @@ function renderRolePicker() {
 
         function handleDeleteSchedule(id) {
             mockSchedule = mockSchedule.filter(s => s.id !== id);
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageScheduleList();
         }
         
@@ -1418,6 +1669,7 @@ function renderRolePicker() {
                 icon: document.getElementById('new-nearby-icon').value || 'map-pin'
             };
             mockNearbyServices.push(newNearby);
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageNearbyList();
             e.target.reset();
             showToast(t('addPlace') + 'd');
@@ -1425,6 +1677,7 @@ function renderRolePicker() {
         
         function handleDeleteNearby(id) {
             mockNearbyServices = mockNearbyServices.filter(s => s.id !== id);
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageNearbyList();
         }
         
@@ -1438,6 +1691,7 @@ function renderRolePicker() {
                 icon: document.getElementById('new-community-icon').value || 'users'
             };
             mockCommunityEvents.push(newEvent);
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageCommunityList();
             e.target.reset();
             showToast(t('addEvent') + 'd');
@@ -1445,6 +1699,7 @@ function renderRolePicker() {
         
         function handleDeleteCommunity(id) {
             mockCommunityEvents = mockCommunityEvents.filter(e => e.id !== id);
+            saveDataToLocalStorage(); // Save to localStorage for guest users
             renderManageCommunityList();
         }
         
@@ -1456,6 +1711,14 @@ function renderRolePicker() {
             window.staticUiInitialized = true;
             
             console.log("Initializing Static UI Listeners...");
+            
+            // Load data from localStorage for guest users
+            loadDataFromLocalStorage();
+            
+            // Start medication reminders if notifications are already enabled
+            if ("Notification" in window && Notification.permission === "granted") {
+                startMedicationReminders();
+            }
 
             // NEW: Logout Button
             document.getElementById('logoutBtnStatic')?.addEventListener('click', async () => {
@@ -1572,6 +1835,26 @@ function renderRolePicker() {
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("/service-worker.js")
                 .catch(err => console.log("SW reg failed", err));
+            
+            // Listen for messages from service worker (e.g., notification actions)
+            navigator.serviceWorker.addEventListener("message", (event) => {
+                console.log("Message from service worker:", event.data);
+                
+                if (event.data.type === "MARK_MED_TAKEN") {
+                    const medId = event.data.medId;
+                    const med = mockMedications.find(m => m.id === medId);
+                    if (med) {
+                        med.taken = true;
+                        saveDataToLocalStorage();
+                        showToast(`✅ ${med.name} marked as taken`);
+                        
+                        // Re-render if we're on the meds page
+                        if (currentPage === 'meds') {
+                            renderApp();
+                        }
+                    }
+                }
+            });
         }
 
 
