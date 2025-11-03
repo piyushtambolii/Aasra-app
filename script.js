@@ -6,7 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Get your anon key from: https://app.supabase.com/project/_/settings/api
 // For now, using a placeholder - replace with your actual anon key
 const supabaseUrl = "https://gzivkrzoitikwtrzmiah.supabase.co";
-const supabaseKey = "YOUR_SUPABASE_ANON_KEY_HERE"; // Replace with your anon key
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6aXZrcnpvaXRpa3d0cnptaWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMDYwNTUsImV4cCI6MjA3NzU4MjA1NX0.iBxJySLJuvgh6wvQlfe22JachiGbpD2JigSIlNsKB2Q"; // Replace with your anon key
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 let currentUser = null;
@@ -62,6 +62,8 @@ function getAuthPage() {
     </div>
   `;
 }
+
+
 
 // These functions are no longer needed, as we are using the static UI
 /*
@@ -265,7 +267,6 @@ async function logout() {
 //     })
 //   );
 // });
-
 
 
 
