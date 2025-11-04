@@ -1,367 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#3B82F6">
 
-    <title>Aasra App</title>
-    
-    <!-- Favicon -->
-    <!-- <link rel="icon" type="image/svg+xml" href="/favicon.svg"> -->
-    <link rel="icon" type="image/x-icon" href="/icons/icon-192.png">
-    
-    <!-- 1. Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 2. Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+  <title>Aasra — Senior Care Companion</title>
 
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#3B82F6">
+  <!-- Favicons & Manifest -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="manifest" href="/manifest.json">
 
-    
-    <style>
-        /* Simple style jo 'hidden' class ko handle karega */
-        .hidden {
-            display: none;
-        }
-        /* Font load karna */
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Noto Sans', 'Noto Sans Devanagari', 'sans-serif';
-        }
-        
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .fade-in {
-            animation: fadeIn 0.3s ease-out;
-        }
-        
-        @keyframes slideOut {
-            from { opacity: 1; transform: translateX(0); }
-            to { opacity: 0; transform: translateX(-100px); height: 0; padding: 0; margin: 0; border: 0;}
-        }
-        .slide-out {
-            animation: slideOut 0.5s ease-in forwards;
-            overflow: hidden;
-        }
-        
-        /* Toast Notification */
-        @keyframes slideInUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes slideOutDown {
-            from { transform: translateY(0); opacity: 1; }
-            to { transform: translateY(100%); opacity: 0; }
-        }
-        .toast {
-            animation: slideInUp 0.5s ease-out forwards, slideOutDown 0.5s ease-in 3.5s forwards;
-        }
-        
-        /* Make text unselectable */
-        .unselectable {
-          -webkit-touch-callout: none;
-          -webkit-user-select: none;
-          -khtml-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-          user-select: none;
-        }
-    </style>
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide icons (safe fallback: file loads from unpkg) -->
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+
+  <!-- Inline styles & fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+
+    :root { --brand: #3B82F6; }
+
+    html,body { height: 100%; }
+    body {
+      font-family: 'Noto Sans', 'Noto Sans Devanagari', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background-color: #f8fafc;
+      margin: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .hidden { display: none; }
+    .fade-in { animation: fadeIn 320ms ease-out; }
+    .slide-out { animation: slideOut 500ms ease-in forwards; overflow: hidden; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-120px); height: 0; padding: 0; margin: 0; } }
+
+    .toast { animation: slideInUp 0.45s ease-out forwards, slideOutDown 0.45s ease-in 3.5s forwards; }
+    @keyframes slideInUp { from { transform: translateY(40px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+    @keyframes slideOutDown { from { transform: translateY(0); opacity: 1 } to { transform: translateY(40px); opacity: 0 } }
+
+    .unselectable { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="min-h-screen">
 
-<!-- 
-==================================================================
-===== 1. MAIN APP CONTAINER (HIDDEN BY DEFAULT) =====
-==================================================================
--->
-<div id="main-app-container" class="hidden">
+  <!-- MAIN APP CONTAINER (hidden until login/role resolved by script.js) -->
+  <div id="main-app-container" class="hidden">
 
-    <!-- 1. Language Switcher -->
+    <!-- LANGUAGE / TOP BAR -->
     <div class="flex justify-center space-x-2 bg-gray-900 p-2 sticky top-0 z-50">
-        <button id="lang-en" class="py-1 px-3 rounded-full text-sm font-medium bg-blue-500 text-white transition-all duration-300">EN</button>
-        <button id="lang-hi" class="py-1 px-3 rounded-full text-sm font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all duration-300">हिन्दी</button>
-        <button id="lang-mr" class="py-1 px-3 rounded-full text-sm font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all duration-300">मराठी</button>
+      <button id="lang-en" class="py-1 px-3 rounded-full text-sm font-medium bg-blue-500 text-white transition-all duration-300">EN</button>
+      <button id="lang-hi" class="py-1 px-3 rounded-full text-sm font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all duration-300">हिन्दी</button>
+      <button id="lang-mr" class="py-1 px-3 rounded-full text-sm font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all duration-300">मराठी</button>
     </div>
 
-    <!-- 2. View Toggle (Demo) -->
+    <!-- VIEW TOGGLE (Elder / Caregiver) -->
     <div class="bg-gray-800 text-white p-2 text-center sticky top-10 z-40">
-        <span class="text-sm mr-4">
-            <span data-i18n="demoAasra">Demo (Aasra):</span>
-            <span data-i18n="viewingAs">You are viewing as</span>
-            <strong id="view-toggle-role" data-i18n="elder">Elder</strong>
-        </span>
-        <button id="view-toggle-btn" class="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-full transition-all duration-300 active:scale-95">
-            <span data-i18n="switchTo">Switch to</span>
-            <span id="view-toggle-target" data-i18n="caregiver">Caregiver</span>
-        </button>
+      <span class="text-sm mr-4">
+        <span data-i18n="demoAasra">Demo (Aasra):</span>
+        <span data-i18n="viewingAs">You are viewing as</span>
+        <strong id="view-toggle-role" data-i18n="elder">Elder</strong>
+      </span>
+      <button id="view-toggle-btn" class="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-full transition-all duration-300 active:scale-95">
+        <span data-i18n="switchTo">Switch to</span>
+        <span id="view-toggle-target" data-i18n="caregiver">Caregiver</span>
+      </button>
     </div>
 
-    <!-- 3. Main Content Area -->
+    <!-- APP CONTENT -->
     <div class="p-4 md:p-8 max-w-4xl mx-auto pb-24">
-        
-        <!-- ===== ELDER VIEW ===== -->
-        <div id="elder-view-container">
-            <!-- Elder Header -->
-            <div class="flex items-center justify-between mb-6">
-                <h1 class="text-4xl font-bold text-blue-600">Aasra</h1>
-                <!-- LOGOUT BUTTON -->
-                <button id="logoutBtnStatic" class="text-gray-500 hover:text-red-500 transition-all duration-300 active:scale-90" title="Logout">
-                    <i data-lucide="log-out" class="h-8 w-8"></i>
-                </button>
-            </div>
- 
 
-            <!-- Elder Pages -->
-            <!-- Page: Home -->
-            <div id="page-elder-home" class="flex flex-col space-y-6 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
-                
-                <!-- Col 1 -->
-                <div class="flex flex-col space-y-6">
-                    <button id="btn-sos-open" class="bg-red-600 hover:bg-red-700 text-white rounded-2xl p-10 flex flex-col items-center justify-center shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-100 h-64 md:h-full md:min-h-[400px]">
-                        <i data-lucide="shield-alert" class="h-20 w-20"></i>
-                        <span class="text-5xl font-bold mt-4" data-i18n="sos">SOS</span>
-                        <span class="text-xl" data-i18n="getHelpNow">Get Help Now</span>
-                    </button>
-
-                    <!-- Dynamic Reminder Card (Mobile only) -->
-                    <div id="next-reminder-card" class="bg-white p-4 rounded-xl shadow-lg border border-yellow-300 transition-all duration-300 hover:shadow-md md:hidden">
-                        <div class="flex items-center">
-                            <i data-lucide="bell" class="text-yellow-600 mr-3 h-6 w-6"></i>
-                            <div>
-                                <h3 class="font-bold text-lg" data-i18n="nextReminder">Next Reminder</h3>
-                                <p id="next-reminder-text" class="text-gray-700">Loading...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Col 2 -->
-                <div class="flex flex-col space-y-6">
-                    <!-- Dynamic Reminder Card (Desktop only) -->
-                    <div id="next-reminder-card-desktop" class="bg-white p-4 rounded-xl shadow-lg border border-yellow-300 transition-all duration-300 hover:shadow-md hidden md:flex">
-                         <div class="flex items-center">
-                            <i data-lucide="bell" class="text-yellow-600 mr-3 h-6 w-6"></i>
-                            <div>
-                                <h3 class="font-bold text-lg" data-i18n="nextReminder">Next Reminder</h3>
-                                <p id="next-reminder-text-desktop" class="text-gray-700">Loading...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- NEW: Today's Plan Button -->
-                    <button data-page="plan" class="nav-btn bg-indigo-500 hover:bg-indigo-600 text-white rounded-2xl p-8 flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95">
-                        <i data-lucide="calendar-check" class="h-10 w-10 mr-4"></i>
-                        <span class="text-3xl font-bold" data-i18n="todaysPlan">Today's Plan</span>
-                    </button>
-                    
-                    <div class="grid grid-cols-2 gap-6">
-                        <button data-page="meds" class="nav-btn bg-blue-500 hover:bg-blue-600 text-white rounded-2xl p-6 flex flex-col items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 h-40">
-                            <i data-lucide="pill" class="h-10 w-10"></i>
-                            <span class="text-2xl font-bold mt-2" data-i18n="meds">Meds</span>
-                        </button>
-                        <button data-page="contacts" class="nav-btn bg-green-500 hover:bg-green-600 text-white rounded-2xl p-6 flex flex-col items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 h-40">
-                            <i data-lucide="phone-call" class="h-10 w-10"></i>
-                            <span class="text-2xl font-bold mt-2" data-i18n="calls">Calls</span>
-                        </button>
-                        <button data-page="nearby" class="nav-btn bg-purple-500 hover:bg-purple-600 text-white rounded-2xl p-6 flex flex-col items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 h-40">
-                            <i data-lucide="map-pin" class="h-10 w-10"></i>
-                            <span class="text-2xl font-bold mt-2" data-i18n="nearby">Nearby</span>
-                        </button>
-                        <button data-page="community" class="nav-btn bg-orange-500 hover:bg-orange-600 text-white rounded-2xl p-6 flex flex-col items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 h-40">
-                            <i data-lucide="users" class="h-10 w-10"></i>
-                            <span class="text-2xl font-bold mt-2" data-i18n="community">Community</span>
-                        </button>
-                    </div>
-
-                    <button data-page="doctorOnCall" class="nav-btn bg-teal-500 hover:bg-teal-600 text-white rounded-2xl p-8 flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95">
-                        <i data-lucide="stethoscope" class="h-10 w-10 mr-4"></i>
-                        <span class="text-3xl font-bold" data-i18n="doctorOnCall">Doctor on Call</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Page: Today's Plan (NEW) -->
-            <div id="page-elder-plan" class="hidden pb-24">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="todaysPlan">Today's Plan</h1>
-                <div id="plan-list-container" class="space-y-6">
-                    <!-- Plan items will be added by JS -->
-                </div>
-            </div>
-            
-            <!-- Page: Meds -->
-            <div id="page-elder-meds" class="hidden pb-24">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="yourMeds">Your Medications</h1>
-                <div id="meds-list-container" class="space-y-6">
-                    <!-- Meds will be added by JS from Supabase -->
-                </div>
-            </div>
-
-            <!-- Page: Contacts -->
-            <div id="page-elder-contacts" class="hidden pb-24">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="yourContacts">Your Contacts</h1>
-                <div id="contacts-list-container" class="space-y-6">
-                    <!-- Contacts content will be added by JS -->
-                </div>
-            </div>
-
-            <!-- Page: Nearby -->
-            <div id="page-elder-nearby" class="hidden pb-24">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="nearbyServices">Nearby Services</h1>
-                <div class="bg-gray-300 h-64 rounded-2xl flex items-center justify-center text-gray-600 shadow-inner mb-6">
-                    <i data-lucide="map-pin" class="h-12 w-12"></i>
-                    <span class="ml-2 text-2xl" data-i18n="mapPlaceholder">Map Placeholder (Your Location)</span>
-                </div>
-                <div id="nearby-list-container" class="space-y-6">
-                    <!-- Nearby content will be added by JS -->
-                </div>
-            </div>
-
-            <!-- Page: Community -->
-            <div id="page-elder-community" class="hidden pb-24">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="communityHub">Community Hub</h1>
-                <button class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-2xl p-8 flex items-center justify-center shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 mb-8">
-                    <i data-lucide="message-square" class="h-10 w-10 mr-4"></i>
-                    <span class="text-3xl font-bold" data-i18n="askForHelp">Ask for Help</span>
-                </button>
-                <h2 class="text-3xl font-semibold text-gray-700 mb-4" data-i18n="localEvents">Local Events</h2>
-                <div id="community-events-container" class="space-y-6">
-                    <!-- Community content will be added by JS -->
-                </div>
-            </div>
-
-            <!-- Page: Doctor on Call -->
-            <div id="page-elder-doctor" class="hidden pb-24 flex flex-col items-center">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="docOnCall">Doctor on Call</h1>
-                <i data-lucide="stethoscope" class="text-teal-500 h-32 w-32 my-12"></i>
-                <p class="text-2xl text-center text-gray-600 mb-12" data-i18n="docOnCallSub">Connect instantly with a certified doctor for a consultation.</p>
-                <button id="btn-open-call-modal" class="w-full max-w-md bg-teal-500 hover:bg-teal-600 text-white rounded-2xl p-10 flex items-center justify-center shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95">
-                    <i data-lucide="phone-call" class="h-12 w-12 mr-6"></i>
-                    <span class="text-4xl font-bold" data-i18n="callDoctorNow">Call Doctor Now</span>
-                </button>
-            </div>
-
-            <!-- Page: Profile (NEW) -->
-            <div id="page-elder-profile" class="hidden pb-24">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="profile">Your Profile</h1>
-                
-                <div class="bg-white p-6 rounded-2xl shadow-lg border-4 border-indigo-500">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4" data-i18n="shareYourId">Share Your ID</h2>
-                    <p class="text-lg text-gray-600 mb-6" data-i18n="shareYourIdSub">Give this ID to your caregiver so they can connect to your account.</p>
-                    
-                    <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-between">
-                        <code id="profile-user-id" class="text-lg font-mono text-gray-700 unselectable">Loading...</code>
-                        <button id="profile-copy-id-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg transition-all duration-300 active:scale-90">
-                            <i data-lucide="copy" class="h-6 w-6"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
+      <!-- ELDER VIEW -->
+      <div id="elder-view-container">
+        <div class="flex items-center justify-between mb-6">
+          <h1 class="text-4xl font-bold text-blue-600">Aasra</h1>
+          <button id="logoutBtnStatic" title="Logout" class="text-gray-500 hover:text-red-500 transition-all duration-300 active:scale-90">
+            <i data-lucide="log-out" class="h-8 w-8"></i>
+          </button>
         </div>
 
-        <!-- ===== CAREGIVER VIEW ===== -->
-        <div id="caregiver-view-container" class="hidden flex flex-col md:flex-row">
-            <!-- Caregiver Nav -->
-            <nav class="w-full md:w-1/4 bg-white p-4 rounded-xl shadow-lg md:mr-6 mb-6 md:mb-0">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">Aasra <span data-i18n="caregiver" class="caregiver-nav-title">Caregiver</span></h2>
-                <ul class="space-y-2" id="caregiver-nav-list">
-                    <!-- Nav items will be added by JS -->
-                </ul>
-            </nav>
-            
-            <!-- Caregiver Content -->
-            <main class="w-full md:w-3/4" id="caregiver-main-content">
-                <div id="page-caregiver-dashboard" class="hidden"></div>
-                <div id="page-caregiver-manage_meds" class="hidden"></div>
-                <div id="page-caregiver-manage_vitals" class="hidden"></div>
-                <div id="page-caregiver-manage_contacts" class="hidden"></div>
-                <div id="page-caregiver-manage_schedule" class="hidden"></div>
-                <div id="page-caregiver-manage_nearby" class="hidden"></div>
-                <div id="page-caregiver-manage_community" class="hidden"></div>
-                <div id="page-caregiver-manage_settings" class="hidden"></div>
-            </main>
+        <!-- HOME GRID -->
+        <div id="page-elder-home" class="flex flex-col space-y-6 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
+          <div class="flex flex-col space-y-6">
+            <button id="btn-sos-open" class="bg-red-600 hover:bg-red-700 text-white rounded-2xl p-10 flex flex-col items-center justify-center shadow-lg transition-all duration-300 hover:shadow-xl h-64 md:h-full md:min-h-[400px]">
+              <i data-lucide="shield-alert" class="h-20 w-20"></i>
+              <span class="text-5xl font-bold mt-4" data-i18n="sos">SOS</span>
+              <span class="text-xl" data-i18n="getHelpNow">Get Help Now</span>
+            </button>
+
+            <div id="next-reminder-card" class="bg-white p-4 rounded-xl shadow-lg border border-yellow-300 transition-all duration-300 hover:shadow-md md:hidden">
+              <div class="flex items-center">
+                <i data-lucide="bell" class="text-yellow-600 mr-3 h-6 w-6"></i>
+                <div>
+                  <h3 class="font-bold text-lg" data-i18n="nextReminder">Next Reminder</h3>
+                  <p id="next-reminder-text" class="text-gray-700">Loading...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col space-y-6">
+            <div id="next-reminder-card-desktop" class="bg-white p-4 rounded-xl shadow-lg border border-yellow-300 transition-all duration-300 hover:shadow-md hidden md:flex">
+              <div class="flex items-center">
+                <i data-lucide="bell" class="text-yellow-600 mr-3 h-6 w-6"></i>
+                <div>
+                  <h3 class="font-bold text-lg" data-i18n="nextReminder">Next Reminder</h3>
+                  <p id="next-reminder-text-desktop" class="text-gray-700">Loading...</p>
+                </div>
+              </div>
+            </div>
+
+            <button data-page="plan" class="nav-btn bg-indigo-500 hover:bg-indigo-600 text-white rounded-2xl p-8 flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl active:scale-95">
+              <i data-lucide="calendar-check" class="h-10 w-10 mr-4"></i>
+              <span class="text-3xl font-bold" data-i18n="todaysPlan">Today's Plan</span>
+            </button>
+
+            <div class="grid grid-cols-2 gap-6">
+              <button data-page="meds" class="nav-btn bg-blue-500 hover:bg-blue-600 text-white rounded-2xl p-6 flex flex-col items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl h-40">
+                <i data-lucide="pill" class="h-10 w-10"></i>
+                <span class="text-2xl font-bold mt-2" data-i18n="meds">Meds</span>
+              </button>
+              <button data-page="contacts" class="nav-btn bg-green-500 hover:bg-green-600 text-white rounded-2xl p-6 flex flex-col items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl h-40">
+                <i data-lucide="phone-call" class="h-10 w-10"></i>
+                <span class="text-2xl font-bold mt-2" data-i18n="calls">Calls</span>
+              </button>
+              <button data-page="nearby" class="nav-btn bg-purple-500 hover:bg-purple-600 text-white rounded-2xl p-6 flex flex-col items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl h-40">
+                <i data-lucide="map-pin" class="h-10 w-10"></i>
+                <span class="text-2xl font-bold mt-2" data-i18n="nearby">Nearby</span>
+              </button>
+              <button data-page="community" class="nav-btn bg-orange-500 hover:bg-orange-600 text-white rounded-2xl p-6 flex flex-col items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl h-40">
+                <i data-lucide="users" class="h-10 w-10"></i>
+                <span class="text-2xl font-bold mt-2" data-i18n="community">Community</span>
+              </button>
+            </div>
+
+            <button data-page="doctorOnCall" class="nav-btn bg-teal-500 hover:bg-teal-600 text-white rounded-2xl p-8 flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-xl active:scale-95">
+              <i data-lucide="stethoscope" class="h-10 w-10 mr-4"></i>
+              <span class="text-3xl font-bold" data-i18n="doctorOnCall">Doctor on Call</span>
+            </button>
+          </div>
         </div>
 
+        <!-- Today's Plan -->
+        <div id="page-elder-plan" class="hidden pb-24">
+          <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="todaysPlan">Today's Plan</h1>
+          <div id="plan-list-container" class="space-y-6"></div>
+        </div>
+
+        <!-- Meds -->
+        <div id="page-elder-meds" class="hidden pb-24">
+          <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="yourMeds">Your Medications</h1>
+          <div id="meds-list-container" class="space-y-6"></div>
+        </div>
+
+        <!-- Contacts -->
+        <div id="page-elder-contacts" class="hidden pb-24">
+          <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="yourContacts">Your Contacts</h1>
+          <div id="contacts-list-container" class="space-y-6"></div>
+        </div>
+
+        <!-- Nearby -->
+        <div id="page-elder-nearby" class="hidden pb-24">
+          <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="nearbyServices">Nearby Services</h1>
+          <div class="bg-gray-300 h-64 rounded-2xl flex items-center justify-center text-gray-600 shadow-inner mb-6">
+            <i data-lucide="map-pin" class="h-12 w-12"></i>
+            <span class="ml-2 text-2xl" data-i18n="mapPlaceholder">Map Placeholder (Your Location)</span>
+          </div>
+          <div id="nearby-list-container" class="space-y-6"></div>
+        </div>
+
+        <!-- Community -->
+        <div id="page-elder-community" class="hidden pb-24">
+          <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="communityHub">Community Hub</h1>
+          <button class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-2xl p-8 flex items-center justify-center shadow-lg mb-8">
+            <i data-lucide="message-square" class="h-10 w-10 mr-4"></i>
+            <span class="text-3xl font-bold" data-i18n="askForHelp">Ask for Help</span>
+          </button>
+          <h2 class="text-3xl font-semibold text-gray-700 mb-4" data-i18n="localEvents">Local Events</h2>
+          <div id="community-events-container" class="space-y-6"></div>
+        </div>
+
+        <!-- Doctor on call -->
+        <div id="page-elder-doctor" class="hidden pb-24 flex flex-col items-center">
+          <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="docOnCall">Doctor on Call</h1>
+          <i data-lucide="stethoscope" class="text-teal-500 h-32 w-32 my-12"></i>
+          <p class="text-2xl text-center text-gray-600 mb-12" data-i18n="docOnCallSub">Connect instantly with a certified doctor for a consultation.</p>
+          <button id="btn-open-call-modal" class="w-full max-w-md bg-teal-500 hover:bg-teal-600 text-white rounded-2xl p-10 flex items-center justify-center shadow-lg">
+            <i data-lucide="phone-call" class="h-12 w-12 mr-6"></i>
+            <span class="text-4xl font-bold" data-i18n="callDoctorNow">Call Doctor Now</span>
+          </button>
+        </div>
+
+        <!-- Profile -->
+        <div id="page-elder-profile" class="hidden pb-24">
+          <h1 class="text-4xl font-bold text-gray-800 mb-6" data-i18n="profile">Your Profile</h1>
+          <div class="bg-white p-6 rounded-2xl shadow-lg border-4 border-indigo-500">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4" data-i18n="shareYourId">Share Your ID</h2>
+            <p class="text-lg text-gray-600 mb-6" data-i18n="shareYourIdSub">Give this ID to your caregiver so they can connect to your account.</p>
+            <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-between">
+              <code id="profile-user-id" class="text-lg font-mono text-gray-700 unselectable">Loading...</code>
+              <button id="profile-copy-id-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg">
+                <i data-lucide="copy" class="h-6 w-6"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAREGIVER VIEW -->
+      <div id="caregiver-view-container" class="hidden flex flex-col md:flex-row">
+        <nav class="w-full md:w-1/4 bg-white p-4 rounded-xl shadow-lg md:mr-6 mb-6 md:mb-0">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Aasra <span class="caregiver-nav-title" data-i18n="caregiver">Caregiver</span></h2>
+          <ul id="caregiver-nav-list" class="space-y-2"></ul>
+        </nav>
+        <main id="caregiver-main-content" class="w-full md:w-3/4">
+          <div id="page-caregiver-dashboard" class="hidden"></div>
+          <div id="page-caregiver-manage_meds" class="hidden"></div>
+          <div id="page-caregiver-manage_vitals" class="hidden"></div>
+          <div id="page-caregiver-manage_contacts" class="hidden"></div>
+          <div id="page-caregiver-manage_schedule" class="hidden"></div>
+          <div id="page-caregiver-manage_nearby" class="hidden"></div>
+          <div id="page-caregiver-manage_community" class="hidden"></div>
+          <div id="page-caregiver-manage_settings" class="hidden"></div>
+        </main>
+      </div>
     </div>
 
-    <!-- 4. Elder Bottom Nav -->
-    <nav id="elder-bottom-nav-container" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-inner flex justify-around z-30">
-        <!-- Nav items will be added by JS -->
-    </nav>
+    <!-- ELDER BOTTOM NAV -->
+    <nav id="elder-bottom-nav-container" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-inner flex justify-around z-30"></nav>
+  </div>
 
+  <!-- AUTH / ROLE PICKER CONTAINER (this is shown when user is not logged in) -->
+  <div id="app"></div>
 
-</div> <!-- End of #main-app-container -->
-
-
-<!-- 
-==================================================================
-===== 2. AUTH CONTAINER (VISIBLE BY DEFAULT) =====
-==================================================================
--->
-<div id="app">
-    <!-- Login/Role Picker UI will be injected here by script.js -->
-</div>
-
-
-<!-- 
-==================================================================
-===== 3. MODALS & TOASTERS =====
-==================================================================
--->
-
-    <!-- 5. SOS Modal -->
-    <div id="sos-modal-container" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center text-white p-8">
-        <!-- SOS Countdown -->
-        <div id="sos-status-countdown" class="text-center">
-            <h1 id="sos-countdown-timer" class="text-9xl font-bold text-red-500">10</h1>
-            <h2 class="text-4xl font-semibold mt-4" data-i18n="sosWillBeSent">SOS will be sent...</h2>
-            <p class="text-2xl mt-2" data-i18n="pressCancel">Press CANCEL if this is a mistake.</p>
-            <button id="btn-sos-cancel" class="mt-12 bg-gray-200 hover:bg-gray-300 text-black rounded-2xl py-6 px-12 text-4xl font-bold transition-all duration-300 active:scale-95" data-i18n="cancel">CANCEL</button>
-        </div>
-        <!-- SOS Sending -->
-        <div id="sos-status-sending" class="hidden text-center flex-col items-center">
-            <div class="animate-spin rounded-full h-32 w-32 border-t-4 border-b-4 border-blue-500 mb-8"></div>
-            <h1 class="text-5xl font-bold text-blue-400" data-i18n="contactingHelp">Contacting Help...</h1>
-            <p class="text-2xl mt-4" data-i18n="contactingHelpSub">Calling emergency contacts and sending location.</p>
-        </div>
-        <!-- SOS Sent -->
-        <div id="sos-status-sent" class="hidden text-center flex-col items-center">
-            <i data-lucide="check-circle" class="h-32 w-32 text-green-500 mb-8"></i>
-            <h1 class="text-5xl font-bold text-green-400" data-i18n="helpOnTheWay">Help is on the way!</h1>
-            <p class="text-2xl mt-4" data-i18n="helpOnTheWaySub">Your Care Circle and Emergency Services have been notified.</p>
-            <button id="btn-sos-ok" class="mt-12 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl py-6 px-12 text-4xl font-bold transition-all duration-300 active:scale-95" data-i18n="ok">OK</button>
-        </div>
+  <!-- SOS Modal -->
+  <div id="sos-modal-container" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center text-white p-8">
+    <div id="sos-status-countdown" class="text-center">
+      <h1 id="sos-countdown-timer" class="text-9xl font-bold text-red-500">10</h1>
+      <h2 class="text-4xl font-semibold mt-4" data-i18n="sosWillBeSent">SOS will be sent...</h2>
+      <p class="text-2xl mt-2" data-i18n="pressCancel">Press CANCEL if this is a mistake.</p>
+      <button id="btn-sos-cancel" class="mt-12 bg-gray-200 hover:bg-gray-300 text-black rounded-2xl py-6 px-12 text-4xl font-bold">CANCEL</button>
     </div>
-    
-    <!-- 6. Confirmation Modal -->
-    <div id="confirmation-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full fade-in">
-            <h2 id="modal-title" class="text-3xl font-bold text-gray-800 mb-4">Are you sure?</h2>
-            <p id="modal-text" class="text-lg text-gray-600 mb-8">This action cannot be undone.</p>
-            <div class="flex justify-end space-x-4">
-                <button id="modal-btn-cancel" class="text-gray-600 bg-gray-100 hover:bg-gray-200 py-3 px-6 rounded-lg font-medium transition-all duration-300 active:scale-95">Cancel</button>
-                <button id="modal-btn-confirm" class="text-white bg-blue-500 hover:bg-blue-600 py-3 px-6 rounded-lg font-medium transition-all duration-300 active:scale-95">Confirm</button>
-            </div>
-        </div>
+    <div id="sos-status-sending" class="hidden text-center flex-col items-center">
+      <div class="animate-spin rounded-full h-32 w-32 border-t-4 border-b-4 border-blue-500 mb-8"></div>
+      <h1 class="text-5xl font-bold text-blue-400" data-i18n="contactingHelp">Contacting Help...</h1>
+      <p class="text-2xl mt-4" data-i18n="contactingHelpSub">Calling emergency contacts and sending location.</p>
     </div>
-
-    <!-- 7. Toast Notification -->
-    <div id="toast-container" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50">
-        <!-- Toast messages will be injected here -->
+    <div id="sos-status-sent" class="hidden text-center flex-col items-center">
+      <i data-lucide="check-circle" class="h-32 w-32 text-green-500 mb-8"></i>
+      <h1 class="text-5xl font-bold text-green-400" data-i18n="helpOnTheWay">Help is on the way!</h1>
+      <p class="text-2xl mt-4" data-i18n="helpOnTheWaySub">Your Care Circle and Emergency Services have been notified.</p>
+      <button id="btn-sos-ok" class="mt-12 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl py-6 px-12 text-4xl font-bold">OK</button>
     </div>
+  </div>
 
+  <!-- Confirmation Modal -->
+  <div id="confirmation-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full fade-in">
+      <h2 id="modal-title" class="text-3xl font-bold text-gray-800 mb-4">Are you sure?</h2>
+      <p id="modal-text" class="text-lg text-gray-600 mb-8">This action cannot be undone.</p>
+      <div class="flex justify-end space-x-4">
+        <button id="modal-btn-cancel" class="text-gray-600 bg-gray-100 hover:bg-gray-200 py-3 px-6 rounded-lg">Cancel</button>
+        <button id="modal-btn-confirm" class="text-white bg-blue-500 hover:bg-blue-600 py-3 px-6 rounded-lg">Confirm</button>
+      </div>
+    </div>
+  </div>
 
-    <!-- 8. JavaScript Logic -->
-    <script type="module" src="/script.js"></script>
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50"></div>
 
+  <!-- Main module script (script.js) -->
+  <!-- Defer & type=module so imports work and DOM is ready when script runs -->
+  <script type="module" src="/script.js" defer></script>
+
+  <!-- Make sure lucide icons render after DOM and lucide script load -->
+  <script>
+    // If lucide isn't ready by the time script runs, wait and create icons when available.
+    document.addEventListener('lucide-ready', () => {
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Fallback: when DOMContentLoaded, try to create icons (script.js will also re-run createIcons where needed)
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        try { lucide.createIcons(); } catch (e) { /* ignore */ }
+      }
+    });
+  </script>
 
 </body>
 </html>
-
