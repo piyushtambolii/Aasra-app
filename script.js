@@ -13,7 +13,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = "https://gzivkrzoitikwtrzmiah.supabase.co"; // <-- replace
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6aXZrcnpvaXRpa3d0cnptaWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMDYwNTUsImV4cCI6MjA3NzU4MjA1NX0.iBxJySLJuvgh6wvQlfe22JachiGbpD2JigSIlNsKB2Q"; // <-- replace
-const SOS_BACKEND_URL = "https://your-vercel-app.vercel.app/api/send";
+const SOS_BACKEND_URL = "https://https://aasra-app.vercel.app/api/send";
 const VAPID_PUBLIC_KEY = "BGLwPjowyVIlRlAw9eKXKf4Rl7RzX_dkUslxYuyO8kBAxQhqsJRhVp442t9vaD_cpFyZwpS14rCQRqxuWoB3_tc"; // <-- replace with real base64 URL-safe key
 
 // Initialize Supabase client
