@@ -13,7 +13,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = "https://gzivkrzoitikwtrzmiah.supabase.co"; // <-- replace
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6aXZrcnpvaXRpa3d0cnptaWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMDYwNTUsImV4cCI6MjA3NzU4MjA1NX0.iBxJySLJuvgh6wvQlfe22JachiGbpD2JigSIlNsKB2Q"; // <-- replace
-const SOS_BACKEND_URL = "https://https://aasra-app.vercel.app/api/send";
+const SOS_BACKEND_URL = "https://aasra-app.vercel.app/api/send";
 const VAPID_PUBLIC_KEY = "BGLwPjowyVIlRlAw9eKXKf4Rl7RzX_dkUslxYuyO8kBAxQhqsJRhVp442t9vaD_cpFyZwpS14rCQRqxuWoB3_tc"; // <-- replace with real base64 URL-safe key
 
 // Initialize Supabase client
@@ -29,33 +29,6 @@ let sosCountdownTimer = null;
 let medicationReminderInterval = null;
 let modalConfirmCallback = null;
 let staticUiInitialized = false;
-
-// ---------------------------
-// GLOBAL NAVIGATION STRUCTURE
-// ---------------------------
-
-// Elder navigation pages
-const pages = [
-  { id: "home", name: "Home", icon: "house" },
-  { id: "plan", name: "Plan", icon: "calendar-check" },
-  { id: "meds", name: "Meds", icon: "pill" },
-  { id: "contacts", name: "Contacts", icon: "phone-call" },
-  { id: "nearby", name: "Nearby", icon: "map-pin" },
-  { id: "community", name: "Community", icon: "users" },
-  { id: "doctorOnCall", name: "Doctor", icon: "stethoscope" },
-  { id: "profile", name: "Profile", icon: "user" }
-];
-
-// Caregiver navigation pages
-const caregiverPages = [
-  { id: "dashboard", name: "Dashboard", icon: "layout-dashboard" },
-  { id: "manage_meds", name: "Medications", icon: "pill" },
-  { id: "manage_contacts", name: "Contacts", icon: "phone" },
-  { id: "manage_schedule", name: "Schedule", icon: "calendar" },
-  { id: "manage_reports", name: "Reports", icon: "file-text" },
-  { id: "manage_settings", name: "Settings", icon: "settings" }
-];
-
 
 // ---- Mock data (fallback for guests) ----
 let mockMedications = [
@@ -185,11 +158,12 @@ async function initApp() {
         .eq("id", currentUser.id)
         .single();
       if (profile?.role) {
-        currentUser.role = profile.role;
-      } else {
-        // role not set -> show role picker
-        currentUser.role = null;
-      }
+  currentUser.role = profile.role;
+} else {
+  currentUser.role = null; // triggers role picker
+  console.log("User has no role yet — showing role picker");
+}
+
     } catch (err) {
       console.warn("Could not fetch profile role:", err);
       currentUser.role = null;
@@ -310,14 +284,16 @@ async function loginWithGoogle() {
   try {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin }
+      options: {
+        redirectTo: "https://aasra-app.vercel.app/index.html"
+      }
     });
-    // Flow continues by redirect; session will be restored in initApp()
   } catch (err) {
     console.error("Google login failed:", err);
-    alert("Login failed. See console.");
+    alert("Login failed. Please try again.");
   }
 }
+
 
 async function signOut() {
   try {
@@ -395,15 +371,7 @@ function renderApp() {
     renderElderBottomNav();
   } else {
     // Caregiver pages
-    const pages = [
-  { id: "dashboard", name: "Dashboard", icon: "layout-dashboard" },
-  { id: "manage_meds", name: "Medications", icon: "pill" },
-  { id: "manage_contacts", name: "Contacts", icon: "phone" },
-  { id: "manage_schedule", name: "Schedule", icon: "calendar" },
-  { id: "manage_reports", name: "Reports", icon: "file-text" },
-  { id: "manage_settings", name: "Settings", icon: "settings" }
-];
-
+    const caregiverPages = ["dashboard", "manage_meds", "manage_vitals", "manage_contacts", "manage_schedule", "manage_nearby", "manage_community", "manage_settings"];
     caregiverPages.forEach(p => {
       document.getElementById(`page-caregiver-${p}`)?.classList.add("hidden");
     });
@@ -411,17 +379,6 @@ function renderApp() {
     renderCaregiverNav();
     renderCaregiverPage();
   }
-  pages.forEach((page) => {
-  const li = document.createElement("li");
-  li.innerHTML = `
-    <button data-page="caregiver-${page.id}"
-      class="w-full flex items-center p-3 rounded-lg hover:bg-gray-100 transition">
-      <i data-lucide="${page.icon}" class="h-5 w-5 mr-3 text-gray-500"></i>
-      <span>${page.name}</span>
-    </button>
-  `;
-  document.getElementById("caregiver-nav-list").appendChild(li);
-});
 
   safeCreateIcons();
 }
@@ -946,10 +903,6 @@ function setLanguage(lang) {
 function toggleView() {
   currentView = currentView === "elder" ? "caregiver" : "elder";
   currentPage = currentView === "elder" ? "home" : "dashboard";
-  // Hide elder footer when caregiver view is active
-const isCaregiver = currentView === "caregiver";
-document.getElementById("elder-bottom-nav-container")?.classList.toggle("hidden", isCaregiver);
-
   renderApp();
   saveDataToLocalStorage();
 }
