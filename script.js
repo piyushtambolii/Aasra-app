@@ -310,16 +310,14 @@ async function loginWithGoogle() {
   try {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: "https://aasra-app.vercel.app/index.html"
-      }
+      options: { redirectTo: window.location.origin }
     });
+    // Flow continues by redirect; session will be restored in initApp()
   } catch (err) {
     console.error("Google login failed:", err);
-    alert("Login failed. Please try again.");
+    alert("Login failed. See console.");
   }
 }
-
 
 async function signOut() {
   try {
@@ -689,127 +687,14 @@ function renderCaregiverPage() {
   // fallback
   const container = document.getElementById(`page-caregiver-${currentPage}`);
   if (container) container.innerHTML = `<div class="bg-white p-6 rounded-2xl shadow-lg"><h2 class="text-xl font-semibold mb-4">Manage ${currentPage}</h2><p>Coming soon</p></div>`;
-  if (currentPage === "dashboard") {
-  renderCaregiverDashboard();
-}
-
 }
 
 // Caregiver page implementations (essential handlers)
-// Caregiver Dashboard Renderer
 function renderCaregiverDashboard() {
-  // Example stats - replace with Supabase data
-  const stats = {
-    elders: 3,
-    sos: 1,
-    meds: 5,
-    appts: 2,
-  };
-
-  document.getElementById("stats-elders").innerText = stats.elders;
-  document.getElementById("stats-sos").innerText = stats.sos;
-  document.getElementById("stats-meds").innerText = stats.meds;
-  document.getElementById("stats-appts").innerText = stats.appts;
-
-  document.getElementById("caregiver-name").innerText = currentUser?.email?.split("@")[0] || "Caregiver";
-
-  // Load charts & elders list
-  renderCaregiverCharts();
-  renderEldersList();
-}
-
-// Render charts
-function renderCaregiverCharts() {
-  const ctx1 = document.getElementById("chart-medication");
-  if (!ctx1) return;
-  new Chart(ctx1, {
-    type: "doughnut",
-    data: {
-      labels: ["Taken", "Missed"],
-      datasets: [
-        {
-          data: [85, 15],
-          backgroundColor: ["#22c55e", "#ef4444"],
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: "bottom" } },
-    },
-  });
-
-  const ctx2 = document.getElementById("chart-sos-trend");
-  if (!ctx2) return;
-  new Chart(ctx2, {
-    type: "line",
-    data: {
-      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-      datasets: [
-        {
-          label: "SOS Alerts",
-          data: [0, 1, 0, 2, 1, 0, 1],
-          borderColor: "#ef4444",
-          fill: false,
-          tension: 0.3,
-        },
-        {
-          label: "Mood Check-ins",
-          data: [5, 6, 7, 6, 8, 7, 9],
-          borderColor: "#3b82f6",
-          fill: false,
-          tension: 0.3,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: "bottom" } },
-      scales: {
-        y: { beginAtZero: true },
-      },
-    },
-  });
-}
-
-// Render elders list
-function renderEldersList() {
-  const container = document.getElementById("caregiver-elders-list");
+  const container = document.getElementById("page-caregiver-dashboard");
   if (!container) return;
-  container.innerHTML = "";
-
-  const elders = [
-    { name: "Meena Sharma", age: 72, health: "Stable", lastSOS: "2 days ago" },
-    { name: "Ramesh Patel", age: 68, health: "Needs Attention", lastSOS: "Today" },
-    { name: "Lata Deshmukh", age: 75, health: "Good", lastSOS: "3 weeks ago" },
-  ];
-
-  elders.forEach((elder) => {
-    const color = elder.health === "Good" ? "green" : elder.health === "Stable" ? "yellow" : "red";
-    container.insertAdjacentHTML(
-      "beforeend",
-      `
-      <div class="flex items-center justify-between border rounded-xl p-4 hover:shadow-lg transition-all">
-        <div>
-          <h4 class="text-2xl font-bold text-gray-800">${elder.name}</h4>
-          <p class="text-gray-600 text-lg">Age: ${elder.age} | Health: 
-            <span class="font-semibold text-${color}-600">${elder.health}</span>
-          </p>
-          <p class="text-gray-500 text-sm">Last SOS: ${elder.lastSOS}</p>
-        </div>
-        <button class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg shadow flex items-center">
-          <i data-lucide="eye" class="h-4 w-4 mr-2"></i> View
-        </button>
-      </div>
-      `
-    );
-  });
-
-  safeCreateIcons();
+  container.innerHTML = `<div class="bg-white p-6 rounded-2xl shadow-lg"><h2 class="text-2xl font-bold mb-6">At-a-Glance</h2><p class="text-gray-600">Dashboard content coming soon.</p></div>`;
 }
-
-
-
 
 function renderCaregiverManageMeds() {
   const container = document.getElementById("page-caregiver-manage_meds");
@@ -1050,8 +935,6 @@ function renderCaregiverManageSettings() {
   `;
   safeCreateIcons();
 }
-
-
 
 // ---- STATE handlers & actions ----
 function setLanguage(lang) {
@@ -1606,7 +1489,5 @@ window._aasra = {
   setUserAsGuest: () => { currentUser = { guest: true, role: "elder" }; loadDataFromLocalStorage(); renderUI(); },
   enableNotifications,
 };
-
-
 
 // ---- End of script.js ----
