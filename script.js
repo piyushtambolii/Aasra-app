@@ -30,6 +30,33 @@ let medicationReminderInterval = null;
 let modalConfirmCallback = null;
 let staticUiInitialized = false;
 
+// ---------------------------
+// GLOBAL NAVIGATION STRUCTURE
+// ---------------------------
+
+// Elder navigation pages
+const pages = [
+  { id: "home", name: "Home", icon: "house" },
+  { id: "plan", name: "Plan", icon: "calendar-check" },
+  { id: "meds", name: "Meds", icon: "pill" },
+  { id: "contacts", name: "Contacts", icon: "phone-call" },
+  { id: "nearby", name: "Nearby", icon: "map-pin" },
+  { id: "community", name: "Community", icon: "users" },
+  { id: "doctorOnCall", name: "Doctor", icon: "stethoscope" },
+  { id: "profile", name: "Profile", icon: "user" }
+];
+
+// Caregiver navigation pages
+const caregiverPages = [
+  { id: "dashboard", name: "Dashboard", icon: "layout-dashboard" },
+  { id: "manage_meds", name: "Medications", icon: "pill" },
+  { id: "manage_contacts", name: "Contacts", icon: "phone" },
+  { id: "manage_schedule", name: "Schedule", icon: "calendar" },
+  { id: "manage_reports", name: "Reports", icon: "file-text" },
+  { id: "manage_settings", name: "Settings", icon: "settings" }
+];
+
+
 // ---- Mock data (fallback for guests) ----
 let mockMedications = [
   { id: 1, name: "Metformin", dosage: "500mg", instruction: "Take before breakfast", time: "08:00", taken: false },
@@ -370,7 +397,15 @@ function renderApp() {
     renderElderBottomNav();
   } else {
     // Caregiver pages
-    const caregiverPages = ["dashboard", "manage_meds", "manage_vitals", "manage_contacts", "manage_schedule", "manage_nearby", "manage_community", "manage_settings"];
+    const pages = [
+  { id: "dashboard", name: "Dashboard", icon: "layout-dashboard" },
+  { id: "manage_meds", name: "Medications", icon: "pill" },
+  { id: "manage_contacts", name: "Contacts", icon: "phone" },
+  { id: "manage_schedule", name: "Schedule", icon: "calendar" },
+  { id: "manage_reports", name: "Reports", icon: "file-text" },
+  { id: "manage_settings", name: "Settings", icon: "settings" }
+];
+
     caregiverPages.forEach(p => {
       document.getElementById(`page-caregiver-${p}`)?.classList.add("hidden");
     });
@@ -378,6 +413,17 @@ function renderApp() {
     renderCaregiverNav();
     renderCaregiverPage();
   }
+  pages.forEach((page) => {
+  const li = document.createElement("li");
+  li.innerHTML = `
+    <button data-page="caregiver-${page.id}"
+      class="w-full flex items-center p-3 rounded-lg hover:bg-gray-100 transition">
+      <i data-lucide="${page.icon}" class="h-5 w-5 mr-3 text-gray-500"></i>
+      <span>${page.name}</span>
+    </button>
+  `;
+  document.getElementById("caregiver-nav-list").appendChild(li);
+});
 
   safeCreateIcons();
 }
@@ -1017,6 +1063,10 @@ function setLanguage(lang) {
 function toggleView() {
   currentView = currentView === "elder" ? "caregiver" : "elder";
   currentPage = currentView === "elder" ? "home" : "dashboard";
+  // Hide elder footer when caregiver view is active
+const isCaregiver = currentView === "caregiver";
+document.getElementById("elder-bottom-nav-container")?.classList.toggle("hidden", isCaregiver);
+
   renderApp();
   saveDataToLocalStorage();
 }
