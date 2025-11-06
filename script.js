@@ -168,10 +168,11 @@ async function initApp() {
       console.warn("Could not fetch profile role:", err);
       currentUser.role = null;
     }
-  }
+  } 
 
   renderUI();
 }
+
 
 // ---- RENDER: Auth / Role Picker / Main App logic ----
 function getAuthPageHtml() {
